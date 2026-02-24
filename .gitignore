@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+.env.local
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Data — large files tracked separately (e.g. Git LFS) or excluded
+# Uncomment the line below to exclude the JSONL dataset from git:
+# data/*.jsonl
+
+# Opik infrastructure secrets — never commit
+infra/opik/.env
+
+# Model weights / checkpoints
+*.bin
+*.safetensors
+*.pt
+*.pth
+checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
