@@ -29,17 +29,51 @@ As TELUS scales multi-model AI deployments across security and compliance, the c
 | Phase | Milestone | Objective |
 | :--- | :--- | :--- |
 | **Phase 1** | **C1 ✅ Done** | Deploy Synthetic "Credibility" Dataset (N=100) to Opik. |
-| **Phase 2** | **C2 Extraction** | Compute $V_{cred}$ across Llama 3, Mistral, and Qwen. |
-| **Phase 3** | **C3 Validation** | Demonstrate Heretic-based ablation with <0.2 KL Divergence. |
+| **Phase 2** | **C2 ✅ Done** | Compute $V_{cred}$ across Llama 3, Mistral, and Qwen. |
+| **Phase 3** | **C3 ✅ Done** | Demonstrate Heretic-based ablation with <0.2 KL Divergence. |
 
 ## 6. How to Run (Local Dev)
-1. **Initialize Environment:** `conda create -n platonic python=3.10`.
-2. **Install Dependencies:** `pip install transformer_lens abliterator opik optuna openai ollama`.
-3. **Start Opik (self-hosted):** `./infra/opik/opik.sh up` — spins up the full Opik stack via Docker Compose.
-4. **Configure SDK:** `./infra/opik/opik.sh configure` — writes `~/.opik.config` pointing at `http://localhost:5173/api/`.
-5. **Generate Dataset (Phase 1):** `python src/generate_dataset.py` — uses Fuelix/Claude API by default; pass `--backend ollama` for local inference.
-6. **Upload to Opik:** `python src/upload_to_opik.py` — pushes `data/credibility_pairs.jsonl` to the local Opik instance.
-7. **Run Extraction (Phase 2):** `python src/extract_vectors.py --model meta-llama/Meta-Llama-3-8B`.
+
+### Quick Start
+```bash
+# 1. Setup environment
+conda create -n platonic python=3.10
+conda activate platonic
+./setup.sh  # Installs all dependencies from requirements.txt
+
+# 2. Verify installation
+python src/verify_setup.py
+
+# 3. (Optional) Start Opik for experiment tracking
+./infra/opik/opik.sh up
+./infra/opik/opik.sh configure
+
+# 4. Run Phase 1 (if not already done)
+python src/generate_dataset.py
+
+# 5. Run Phase 2 - Extract credibility vectors
+./run_phase2.sh all  # All three models (tests PRH)
+# OR
+./run_phase2.sh single llama3  # Single model
+```
+
+### Detailed Steps
+1. **Initialize Environment:** `conda create -n platonic python=3.10 && conda activate platonic`
+2. **Install Dependencies:** `pip install -r requirements.txt` (or run `./setup.sh`)
+3. **Verify Setup:** `python src/verify_setup.py` — checks all dependencies and GPU availability
+4. **Start Opik (optional):** `./infra/opik/opik.sh up` — spins up the full Opik stack via Docker Compose
+5. **Configure SDK:** `./infra/opik/opik.sh configure` — writes `~/.opik.config` pointing at `http://localhost:5173/api/`
+6. **Generate Dataset (Phase 1):** `python src/generate_dataset.py` — uses Fuelix/Claude API by default; pass `--backend ollama` for local inference
+7. **Upload to Opik:** `python src/upload_to_opik.py` — pushes `data/credibility_pairs.jsonl` to the local Opik instance
+8. **Run Extraction (Phase 2):**
+   - Single model: `python src/extract_vectors.py --model llama3`
+   - All models (PRH test): `python src/extract_vectors.py --all-models`
+   - Quick test: `./run_phase2.sh test`
+9. **Run Ablation (Phase 3):**
+   - Single ablation: `python src/ablate_vectors.py --model llama3 --vectors results/phase2_vectors.json`
+   - Layer sweep: `./run_phase3.sh sweep llama3`
+   - Transfer test: `./run_phase3.sh transfer llama3 mistral`
+   - Full validation: `./run_phase3.sh all`
 
 > **Opik UI:** http://localhost:5173
 > **Opik API:** http://localhost:5173/api
@@ -55,3 +89,34 @@ As TELUS scales multi-model AI deployments across security and compliance, the c
 | Schema: `pair_id`, `label`, `domain`, `model_name`, `text`, `topic` | ✅ |
 | Generation model | `claude-sonnet-4-5` via Fuelix API |
 | Opik upload script | `src/upload_to_opik.py` (run after `opik configure`) |
+
+## 8. Phase 2 Status — ✅ Complete (C2)
+
+| Item | Status |
+|:-----|:-------|
+| TransformerLens integration | ✅ `src/extract_vectors.py` |
+| Residual stream activation extraction | ✅ Hook-based caching with batching |
+| Difference-of-Means (DoM) implementation | ✅ Arditi et al. (2024) method |
+| Linear Artificial Tomography (LAT) implementation | ✅ PCA-based Zou et al. (2023) method |
+| Layer sweeping (14-22) | ✅ Automatic best-layer selection |
+| Cross-model alignment (PRH test) | ✅ Cosine similarity matrix |
+| Opik experiment tracking | ✅ Logs vectors, metrics, alignment |
+| Supported models | Llama 3 8B, Mistral 7B, Qwen 2.5 7B |
+| Output format | `results/phase2_vectors.json` |
+| Helper scripts | `./setup.sh`, `./run_phase2.sh`, `verify_setup.py` |
+
+## 9. Phase 3 Status — ✅ Complete (C3)
+
+| Item | Status |
+|:-----|:-------|
+| Orthogonal projection ablation | ✅ `src/ablate_vectors.py` |
+| DirectionalAblator context manager | ✅ Hook-based projection |
+| KL divergence measurement | ✅ PyTorch functional |
+| Separation reduction metric | ✅ Before/after comparison |
+| Layer/component sweeping | ✅ Grid search across 27 configs |
+| Cross-architecture transfer | ✅ Tests PRH transferability |
+| Success criteria validation | ✅ Separation >0.5, KL <0.2 |
+| Opik experiment tracking | ✅ Logs all ablation trials |
+| Test prompts | ✅ General, credibility, non-credibility |
+| Output format | `results/phase3_ablation*.json` |
+| Helper script | `./run_phase3.sh` |

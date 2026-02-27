@@ -45,3 +45,16 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Phase 2 Results
+results/
+outputs/
+
+# HuggingFace and TransformerLens caches
+.cache/
+~/.cache/huggingface/
+~/.cache/torch/
+
+# Opik config
+.opik.config
+infra/opik/volumes/
