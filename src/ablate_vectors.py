@@ -160,7 +160,8 @@ class DirectionalAblator:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit - remove hook."""
-        self.hook_handle.remove()
+        if self.hook_handle is not None:
+            self.hook_handle.remove()
 
 
 # ---------------------------------------------------------------------------
