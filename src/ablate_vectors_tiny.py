@@ -206,7 +206,7 @@ def main():
         "--model",
         type=str,
         required=True,
-        help="Tiny model to ablate",
+        help="Model to ablate (shorthand or full HuggingFace ID)",
     )
     parser.add_argument(
         "--vectors",
