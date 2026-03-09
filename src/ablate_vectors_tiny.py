@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 
 # Import from main ablate script
 sys.path.insert(0, str(Path(__file__).parent))
-from ablate_vectors import DirectionalAblator
+from ablate_vectors import DirectionalAblator, generate_with_ablation
 
 # Tiny models (TransformerLens supported)
 TINY_MODELS = {
@@ -166,6 +166,12 @@ def ablate_tiny(
         # Simple KL measurement
         kl = compute_kl_tiny(model, GENERAL_PROMPTS_TINY)
         log.info("  KL divergence (proxy): %.4f", kl)
+
+        # Generate sample
+        log.info("Generating sample with ablation...")
+        sample_prompt = "The capital of France is"
+        sample_output = generate_with_ablation(model, sample_prompt)
+        log.info("  Output: %r", sample_output)
 
     # Compute reduction
     separation_reduction = (
