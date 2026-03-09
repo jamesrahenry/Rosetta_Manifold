@@ -5,7 +5,7 @@
 
 **James Henry**
 *james.henry@telus.com*
-TELUS Digital
+TELUS
 
 March 2026
 
