@@ -149,12 +149,19 @@ def compute_dom_vector(
     Method from Arditi et al. (2024): arXiv:2406.11717
     V_cred = mean(A_credible) - mean(A_non_credible)
 
+    The result is normalized and sign-aligned so that
+    V_cred^DoM · mean(A_credible) > 0, i.e. the vector points toward
+    the credible cluster.
+
+    NOTE: compute_lat_vector aligns its sign against this function's output,
+    so any sign change here propagates transitively to the LAT vector as well.
+
     Args:
         credible_activations: Activations for credible texts (n, hidden_dim)
         non_credible_activations: Activations for non-credible texts (n, hidden_dim)
 
     Returns:
-        Normalized direction vector (hidden_dim,)
+        Normalized direction vector (hidden_dim,) pointing toward credible cluster
     """
     mean_credible = credible_activations.mean(axis=0)
     mean_non_credible = non_credible_activations.mean(axis=0)
@@ -165,6 +172,11 @@ def compute_dom_vector(
     norm = np.linalg.norm(direction)
     if norm > 0:
         direction = direction / norm
+
+    # Sign alignment: ensure V_cred^DoM · Ā_cred > 0
+    # (mean_credible need not be normalized; only the sign of the dot product matters)
+    if np.dot(direction, mean_credible) < 0:
+        direction = -direction
 
     return direction
 
@@ -454,8 +466,19 @@ def compute_alignment_matrix(results_list: list[dict]) -> dict:
     log.info("  LAT: %.4f", avg_lat)
 
     prh_threshold = 0.5
-    prh_result = avg_dom >= prh_threshold or avg_lat >= prh_threshold
+    prh_result = avg_dom >= prh_threshold and avg_lat >= prh_threshold
     log.info("PRH test (threshold=%.2f): %s", prh_threshold, "PASS" if prh_result else "FAIL")
+    if not prh_result:
+        log.info(
+            "  DoM: %s (%.4f)",
+            "PASS" if avg_dom >= prh_threshold else "FAIL",
+            avg_dom,
+        )
+        log.info(
+            "  LAT: %s (%.4f)",
+            "PASS" if avg_lat >= prh_threshold else "FAIL",
+            avg_lat,
+        )
 
     alignment["prh_threshold"] = prh_threshold
     alignment["prh_pass"] = prh_result
