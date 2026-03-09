@@ -227,7 +227,7 @@ Ablation experiments on proxy models demonstrated:
 
 ### 6.4 Cross-Architecture Transfer — Preliminary
 
-Transfer experiments at proxy model scale showed separation reductions of 45–72% when applying a source model's $V_{cred}$ to a target model of the same family. Cross-family transfer (e.g., GPT-2 → GPT-Neo) showed reductions of 28–51%, with the lower bound approaching but not consistently exceeding the 30% threshold. Full target model results are pending.
+Transfer experiments at proxy model scale showed separation reductions of 45–72% when applying a source model's $V_{cred}$ to a target model of the same family. Cross-family transfer (e.g., GPT-2 $\rightarrow$ GPT-Neo) showed reductions of 28–51%, with the lower bound approaching but not consistently exceeding the 30% threshold. Full target model results are pending.
 
 ### 6.5 Summary of Current Status
 
