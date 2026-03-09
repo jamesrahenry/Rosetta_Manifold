@@ -18,7 +18,7 @@ As organizations scale multi-model AI deployments across security and compliance
   - **Difference-of-Means (DoM):** Arditi et al. (2024), arXiv:2406.11717 — fast, interpretable, single-direction mediation.
   - **Linear Artificial Tomography (LAT):** Zou et al. (2023) Representation Engineering, arXiv:2310.01405 — top-down PCA-based approach; more robust to non-linear separability.
   - **PRH Test:** Cosine Similarity / CKA across architectures (Huh et al., 2024, arXiv:2405.07987).
-- **Scale-up:** **Vector Institute** cluster for full N runs across all three architectures.
+- **Scale-up:** High-performance GPU cluster for full N runs across all three architectures.
 
 ## 4. Repository Structure
 - `docs/`: Technical specifications and PRH research notes.
@@ -30,8 +30,8 @@ As organizations scale multi-model AI deployments across security and compliance
 | Phase | Milestone | Objective | Status |
 | :--- | :--- | :--- | :--- |
 | **Phase 1** | **C1** | Deploy Synthetic "Credibility" Dataset (N=100) to Opik. | ✅ Done |
-| **Phase 2** | **C2** | Compute $V_{cred}$ across Llama 3, Mistral, and Qwen. | 🔬 Partial — validated on GPT-2/GPT-Neo/OPT families (124M–2.7B); Llama 3/Mistral/Qwen pending GPU cluster access. |
-| **Phase 3** | **C3** | Demonstrate ablation with <0.2 KL Divergence. | 🔬 Partial — 100% separation reduction achieved across all 10 tested models; KL threshold (<0.2) not yet met at tested scales (3.16–5.71 observed); predicted to pass at 7B+ scale. |
+| **Phase 2** | **C2** | Compute $V_{cred}$ across Llama 3, Mistral, and Qwen. | 🔬 Preliminary — validated on GPT-2/GPT-Neo/OPT families (124M–2.7B); Llama 3/Mistral/Qwen pending full-scale compute. |
+| **Phase 3** | **C3** | Demonstrate ablation with <0.2 KL Divergence. | 🔬 Preliminary — 100% separation reduction achieved across all 10 tested models; KL threshold (<0.2) not yet met at tested scales (3.16–5.71 observed); predicted to pass at 7B+ scale. |
 
 ## 6. How to Run (Local Dev)
 
