@@ -146,7 +146,11 @@ To test the Platonic Representation Hypothesis, we compute pairwise cosine simil
 
 $$\text{sim}(M_i, M_j) = \frac{V_{cred}^{(M_i)} \cdot V_{cred}^{(M_j)}}{\|V_{cred}^{(M_i)}\| \cdot \|V_{cred}^{(M_j)}\|}$$
 
-We report the full $3 \times 3$ similarity matrix and the average pairwise similarity. The PRH test passes if the average similarity exceeds 0.5 for both DoM and LAT vectors.
+We report the full $3 \times 3$ similarity matrix and the average pairwise similarity. The PRH test passes if the average similarity exceeds 0.5 for **both** DoM and LAT vectors.
+
+**Methodological note on direct cosine comparison.** Although all three target models share a hidden dimension of $d = 4096$, their latent basis vectors are not aligned: different random initializations and training data orderings produce representations that are arbitrarily rotated relative to one another. Direct cosine similarity between vectors from different models is therefore a *lower bound* on true geometric alignment — a low score does not rule out alignment, but a high score is strong evidence for it.
+
+To address this, we implement **Orthogonal Procrustes alignment** (`src/align_vectors.py`). We learn a rotation matrix $R \in \mathbb{R}^{d \times d}$ that maps one model's activation space to another's using a shared calibration set (the credibility dataset itself), then compute $\text{sim}(V_{cred}^{(M_i)}, R V_{cred}^{(M_j)})$. This provides a principled upper bound on cross-architecture alignment.
 
 ---
 
@@ -244,6 +248,8 @@ Our preliminary results support the hypothesis that credibility is encoded as an
 
 The most significant limitation of our current results is the elevated KL divergence at proxy model scales (3.16–5.71 vs. the < 0.2 target). We interpret this as a scale effect: smaller models have lower representational redundancy, meaning that removing a single direction from the residual stream has a proportionally larger impact on the output distribution. At 7B+ scale, the residual stream has sufficient capacity to absorb the projection without disrupting general computation. This prediction is consistent with the findings of Arditi et al. (2024), who demonstrated clean ablation at 7B scale, and with the general observation that larger models are more robust to targeted interventions.
 
+A critical validity concern follows from this: a KL divergence of 3.16–5.71 is not merely "elevated" — it is consistent with catastrophic model collapse, where the ablated model produces degenerate outputs (token repetition, incoherence) rather than coherent text with reduced credibility sensitivity. If the proxy models collapsed entirely, the 100% separation reduction is trivially explained by the model being unable to produce any meaningful output, not by targeted suppression of the credibility direction. We propose a **perplexity validity gate** to distinguish these cases: compute perplexity on a held-out general corpus before and after ablation. If post-ablation perplexity exceeds a threshold (e.g., 10× baseline), the result should be classified as model collapse rather than successful ablation, and the separation metric should be discarded. This check will be included in the full-scale pipeline and is straightforward to implement using the existing `GENERAL_PROMPTS` evaluation set.
+
 ### 7.3 Implications for Transferable Interpretability
 
 If the full-scale results confirm the PRH prediction (average cross-architecture cosine similarity > 0.5), this would have significant practical implications for AI governance. It would mean that:
@@ -262,14 +268,19 @@ If the full-scale results confirm the PRH prediction (average cross-architecture
 
 **Scale gap**: The proxy model results (124M–2.7B) may not generalize to 7B+ models. The KL divergence results in particular are expected to change substantially at scale.
 
+**LAT at N=100, d=4096**: The LAT method applies PCA to the difference matrix $\Delta A \in \mathbb{R}^{100 \times 4096}$. Because the number of samples (100) is vastly smaller than the number of dimensions (4096), the covariance matrix is highly rank-deficient (rank ≤ 99). PCA in this regime is susceptible to finding spurious directions that perfectly separate the training data by capitalizing on noise rather than signal. This is a known limitation of LAT at small N relative to d. The fix is to scale the dataset to N=1000+ before running full-scale LAT on 7B/8B models — a straightforward extension since the dataset is synthetically generated. DoM is not affected by this limitation, as it operates on means rather than covariance structure.
+
+**Proxy model ablation validity**: The observed KL divergence of 3.16–5.71 at proxy model scales represents severe capability disruption, not merely "elevated" divergence. At this level, ablated proxy models likely produce degenerate outputs (repetition, incoherence). This raises the question of whether the 100% separation reduction observed at proxy scale reflects genuine credibility suppression or wholesale model collapse. We propose a perplexity check as a validity gate: if post-ablation perplexity on a held-out general corpus approaches infinity, the separation metric is moot and the result should be reported as model collapse rather than successful ablation. This check is straightforward to implement and will be included in the full-scale pipeline.
+
 ### 7.5 Future Directions
 
-1. **Full-scale validation**: Run the complete pipeline on Llama 3 8B, Mistral 7B, and Qwen 2.5 7B using the Vector Institute GPU cluster.
+1. **Full-scale validation**: Run the complete pipeline on Llama 3 8B, Mistral 7B, and Qwen 2.5 7B using the Vector Institute GPU cluster, with dataset scaled to N=1000+ to address the LAT rank-deficiency limitation.
 2. **Concept expansion**: Apply the same methodology to honesty, bias, and harmfulness to build a library of transferable semantic directions.
 3. **Larger models**: Test at 70B and 405B scale to assess whether alignment strengthens with model size (as predicted by the PRH).
 4. **Human validation**: Validate the dataset and extracted directions with human annotators to ensure ecological validity.
 5. **Production deployment**: Develop a real-time credibility detection API based on the extracted directions, enabling model-agnostic content moderation.
 6. **DoM-LAT agreement characterization**: Systematically characterize the conditions under which DoM and LAT diverge. Preliminary observations suggest that agreement degrades in low-dimensional or low-sample regimes (where PCA principal components are unstable), but converges reliably at production scale (N=100 pairs, d=4096). A controlled synthetic benchmark varying dimensionality, sample size, and signal-to-noise ratio would establish the regime boundaries and inform extraction method selection for future concept directions.
+7. **Perplexity validity gate for ablation**: Implement a perplexity check to distinguish targeted credibility suppression from model collapse at proxy scales. Compute perplexity on a held-out general corpus before and after ablation; classify results as model collapse if post-ablation perplexity exceeds 10× baseline.
 
 ---
 
