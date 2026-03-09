@@ -218,8 +218,8 @@ Pairwise cosine similarities between credibility vectors extracted from proxy mo
 
 Ablation experiments on proxy models demonstrated:
 
-- **Separation reduction**: 100% reduction achieved across all 10 tested models at the optimal layer/component configuration, confirming that orthogonal projection successfully suppresses the credibility direction.
-- **KL divergence**: Observed KL divergence ranged from 3.16 to 5.71 at proxy model scales (124M–2.7B). This exceeds the < 0.2 threshold, consistent with the known phenomenon that smaller models are more sensitive to directional ablation due to lower representational redundancy. We predict that KL divergence will fall below 0.2 at 7B+ scale, where the residual stream has sufficient capacity to absorb the projection without disrupting general computation.
+- **Separation reduction**: 100% reduction achieved across all 10 tested models at the optimal layer/component configuration. However, this result must be interpreted with caution due to the high KL divergence (see below), which suggests the reduction may be partly attributable to model collapse rather than targeted suppression.
+- **KL divergence**: Observed KL divergence ranged from 3.16 to 5.71 at proxy model scales (124M–2.7B). This exceeds the < 0.2 threshold and indicates significant capability degradation. As noted in Section 7.4, this level of divergence is consistent with model collapse, which would trivially result in 100% separation reduction. We predict that KL divergence will improve at 7B+ scale, where the residual stream has sufficient capacity to absorb the projection without disrupting general computation.
 
 ### 6.4 Cross-Architecture Transfer — Preliminary
 
