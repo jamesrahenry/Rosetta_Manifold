@@ -154,7 +154,13 @@ class DirectionalAblator:
         return ablated
 
     def __enter__(self):
-        """Context manager entry - add hook."""
+        """Context manager entry - add hook via model.add_hook().
+
+        NOTE: compute_kl_divergence_from_baseline_logits detects active hooks by
+        inspecting model.hook_dict[*].fwd_hooks. This works because add_hook()
+        appends to those lists. If this is ever changed to use run_with_hooks()
+        instead, the guard in that function must be updated accordingly.
+        """
         self.hook_handle = self.model.add_hook(self.hook_name, self.ablation_hook)
         return self
 
@@ -169,47 +175,70 @@ class DirectionalAblator:
 # ---------------------------------------------------------------------------
 
 
-def compute_kl_divergence(
-    model_baseline: HookedTransformer,
-    model_ablated: HookedTransformer,
+def compute_kl_divergence_from_baseline_logits(
+    model: HookedTransformer,
+    baseline_logits_list: list[torch.Tensor],
     prompts: list[str],
-    max_tokens: int = 20,
 ) -> float:
     """
-    Compute KL divergence between baseline and ablated model distributions.
+    Compute KL divergence between pre-captured baseline logits and ablated model.
 
-    KL(P_baseline || P_ablated) where P is the output distribution.
+    KL(P_baseline || P_ablated) where P_ablated is computed with active hooks.
+
+    IMPORTANT: This function must be called with ablation hooks active (i.e., inside
+    a DirectionalAblator context manager). Calling it without active hooks will
+    silently return KL ≈ 0 because the model will produce the same logits as baseline.
 
     Args:
-        model_baseline: Original model
-        model_ablated: Ablated model (or context manager)
-        prompts: List of prompts to evaluate
-        max_tokens: Number of tokens to generate
+        model: Model (with ablation hooks active)
+        baseline_logits_list: Pre-captured last-token logits for each prompt
+        prompts: List of prompts (must match baseline_logits_list length)
 
     Returns:
         Average KL divergence across prompts
     """
+    if len(prompts) != len(baseline_logits_list):
+        raise ValueError(
+            f"prompts ({len(prompts)}) and baseline_logits_list "
+            f"({len(baseline_logits_list)}) must have the same length"
+        )
+
+    # Guard: verify ablation hooks are active to prevent silent KL ≈ 0 results.
+    # TransformerLens populates model.hook_dict with HookPoint objects at model
+    # construction time; each HookPoint has a .fwd_hooks list that is populated
+    # only when model.add_hook() is called (as DirectionalAblator.__enter__ does).
+    # This guard therefore correctly detects whether we are inside a
+    # DirectionalAblator context. It would NOT detect hooks registered via
+    # run_with_hooks() — see the note in DirectionalAblator.__enter__.
+    if not model.hook_dict or not any(
+        len(hp.fwd_hooks) > 0 for hp in model.hook_dict.values()
+    ):
+        raise RuntimeError(
+            "compute_kl_divergence_from_baseline_logits must be called with "
+            "ablation hooks active (inside a DirectionalAblator context manager)"
+        )
+
     kl_scores = []
 
-    for prompt in prompts:
-        # Tokenize
-        tokens = model_baseline.to_tokens(prompt, prepend_bos=True)
+    for prompt, logits_baseline in zip(prompts, baseline_logits_list):
+        tokens = model.to_tokens(prompt, prepend_bos=True)
 
         with torch.no_grad():
-            # Get baseline logits
-            logits_baseline = model_baseline(tokens)
-            # Get ablated logits (will use hooks if in context)
-            logits_ablated = model_ablated(tokens)
-
-            # Take last token logits
-            logits_baseline = logits_baseline[0, -1, :]
+            # Get ablated logits (hooks are active in the calling context)
+            logits_ablated = model(tokens)
             logits_ablated = logits_ablated[0, -1, :]
+
+            # Ensure baseline logits are on the same device as ablated logits.
+            # Baseline tensors were captured before the ablation context; if
+            # anything moves the model between capture and here this prevents a
+            # silent device-mismatch error inside F.kl_div.
+            logits_baseline = logits_baseline.to(logits_ablated.device)
 
             # Convert to probabilities
             probs_baseline = F.softmax(logits_baseline, dim=-1)
             probs_ablated = F.softmax(logits_ablated, dim=-1)
 
-            # Compute KL divergence
+            # Compute KL divergence: KL(P_baseline || P_ablated)
             kl = F.kl_div(
                 probs_ablated.log(), probs_baseline, reduction="sum", log_target=False
             )
@@ -334,6 +363,17 @@ def ablate_and_validate(
     baseline_separation = np.mean(baseline_credible) - np.mean(baseline_non_credible)
     log.info("  Baseline separation: %.4f", baseline_separation)
 
+    # Capture baseline logits before entering the ablation context.
+    # Use .detach().clone() so the tensors are fully independent of the
+    # computation graph and safe to hold across the context boundary.
+    log.info("Capturing baseline logits for KL divergence...")
+    baseline_logits_list = []
+    for prompt in GENERAL_PROMPTS:
+        tokens = model.to_tokens(prompt, prepend_bos=True)
+        with torch.no_grad():
+            logits = model(tokens)
+            baseline_logits_list.append(logits[0, -1, :].detach().clone())
+
     # Apply ablation and measure
     log.info("Applying ablation...")
     with DirectionalAblator(model, direction, layer, component) as ablator:
@@ -348,12 +388,11 @@ def ablate_and_validate(
         ablated_separation = np.mean(ablated_credible) - np.mean(ablated_non_credible)
         log.info("  Ablated separation: %.4f", ablated_separation)
 
-        # Compute KL divergence
+        # Compute KL divergence against pre-captured baseline logits
         log.info("Computing KL divergence on general prompts...")
-        # For KL, we need to compare with/without ablation
-        # Without ablation: just use model normally
-        # With ablation: hooks are active in context
-        kl = compute_kl_divergence(model, model, GENERAL_PROMPTS)
+        kl = compute_kl_divergence_from_baseline_logits(
+            model, baseline_logits_list, GENERAL_PROMPTS
+        )
         log.info("  KL divergence: %.4f", kl)
 
     # Compute reduction

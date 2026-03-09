@@ -10,12 +10,22 @@
 ## 2. Ablation Loop
 
 ```
+# Capture baseline logits BEFORE entering the ablation context
+baseline_logits = {p: model(p)[0, -1, :].detach().clone() for p in eval_prompts}
+
 for each layer in hook_layers:
     for each component in [resid_pre, resid_mid, resid_post]:
-        ablated_model = orthogonalize(model, V_cred, layer, component)
-        kl = compute_kl_divergence(ablated_model, baseline_model, eval_prompts)
+        with DirectionalAblator(model, V_cred, layer, component):
+            # KL is computed inside the context where hooks are active
+            kl = compute_kl_divergence_from_baseline_logits(
+                model, baseline_logits, eval_prompts
+            )
         log to Opik: {layer, component, kl, ablation_weight}
 ```
+
+> **Note:** The baseline logits must be captured *before* entering the ablation context.
+> Capturing them inside the context (or comparing the model to itself) would yield KL ≈ 0
+> regardless of ablation strength, silently masking any capability degradation.
 
 - **Target KL Divergence:** $< 0.20$ against the baseline model on general-purpose prompts.
 - **Sweep Strategy:** Grid search over layers and components (MLP vs. Attention vs. full residual stream). Optuna TPE can be used if the search space is large, but a manual grid is sufficient for the 7B/8B layer range (14–22).

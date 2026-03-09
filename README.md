@@ -4,10 +4,11 @@
 ## 1. Executive Summary
 This project investigates the **Platonic Representation Hypothesis (PRH)** to establish a methodology for **Transferable AI Interpretability**. By identifying and isolating universal semantic vectors (specifically "Credibility") across diverse open-source architectures (Llama 3, Mistral, Qwen), we aim to reduce AI governance overhead and enable model-agnostic oversight.
 
-## 2. Business Case (TELUS Context)
-As TELUS scales multi-model AI deployments across security and compliance, the current need to repeat interpretability audits for every new model creates significant operational drag. 
-- **The Solution:** If semantic concepts converge on shared geometric directions, a single "audit key" can verify trust across different vendor models.
-- **Outcome:** Lower cost of governance and increased speed-to-market for new AI agents.
+## 2. Business Case
+As organizations scale multi-model AI deployments across security and compliance, the current need to repeat interpretability audits for every new model creates significant operational drag.
+- **The Problem:** Each new vendor model requires a fresh audit cycle — expensive, slow, and inconsistent across teams.
+- **The Solution:** If semantic concepts (e.g. credibility, honesty) converge on shared geometric directions across architectures, a single extraction methodology can verify trust across different vendor models.
+- **Outcome:** Lower cost of AI governance and increased speed-to-market for new AI agents, with a reusable audit framework that is model-agnostic in methodology (if not in the extracted vectors themselves).
 
 ## 3. Technical Stack
 - **Activation Extraction:** **TransformerLens** (loaded directly from HuggingFace weights) for full residual stream hook access across Llama 3, Mistral, and Qwen.
@@ -26,11 +27,11 @@ As TELUS scales multi-model AI deployments across security and compliance, the c
 - `experiments/`: Jupyter notebooks for vector alignment and similarity visualization.
 
 ## 5. Roadmap & Milestones
-| Phase | Milestone | Objective |
-| :--- | :--- | :--- |
-| **Phase 1** | **C1 ✅ Done** | Deploy Synthetic "Credibility" Dataset (N=100) to Opik. |
-| **Phase 2** | **C2 ✅ Done** | Compute $V_{cred}$ across Llama 3, Mistral, and Qwen. |
-| **Phase 3** | **C3 ✅ Done** | Demonstrate Heretic-based ablation with <0.2 KL Divergence. |
+| Phase | Milestone | Objective | Status |
+| :--- | :--- | :--- | :--- |
+| **Phase 1** | **C1** | Deploy Synthetic "Credibility" Dataset (N=100) to Opik. | ✅ Done |
+| **Phase 2** | **C2** | Compute $V_{cred}$ across Llama 3, Mistral, and Qwen. | 🔬 Partial — validated on GPT-2/GPT-Neo/OPT families (124M–2.7B); Llama 3/Mistral/Qwen pending GPU cluster access. |
+| **Phase 3** | **C3** | Demonstrate ablation with <0.2 KL Divergence. | 🔬 Partial — 100% separation reduction achieved across all 10 tested models; KL threshold (<0.2) not yet met at tested scales (3.16–5.71 observed); predicted to pass at 7B+ scale. |
 
 ## 6. How to Run (Local Dev)
 

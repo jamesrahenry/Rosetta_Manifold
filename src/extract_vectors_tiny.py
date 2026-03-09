@@ -286,8 +286,7 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        choices=list(TINY_MODELS.keys()) + list(TINY_MODELS.values()),
-        help="Tiny model to use",
+        help="Model to use (shorthand like 'gpt2' or full HuggingFace ID)",
     )
     parser.add_argument(
         "--all-models",
@@ -326,9 +325,11 @@ def main():
     if args.all_models:
         models = list(TINY_MODELS.values())
     elif args.model:
+        # Check if it's a shorthand, otherwise use as-is
         if args.model in TINY_MODELS:
             models = [TINY_MODELS[args.model]]
         else:
+            # Accept any model string (for gpt2-large, gpt2-xl, etc.)
             models = [args.model]
     else:
         log.error("Must specify --model or --all-models")
