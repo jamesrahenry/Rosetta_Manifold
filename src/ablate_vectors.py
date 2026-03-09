@@ -292,6 +292,29 @@ def measure_activation_along_direction(
     return activations
 
 
+def generate_with_ablation(
+    model: HookedTransformer,
+    prompt: str,
+    max_tokens: int = 30,
+) -> str:
+    """
+    Generate text with the current model state (hooks active).
+
+    Args:
+        model: HookedTransformer model
+        prompt: Input prompt
+        max_tokens: Max new tokens to generate
+
+    Returns:
+        Generated text
+    """
+    # Ensure we are in eval mode
+    model.eval()
+    with torch.no_grad():
+        output = model.generate(prompt, max_new_tokens=max_tokens, verbose=False)
+    return output
+
+
 # ---------------------------------------------------------------------------
 # Main ablation pipeline
 # ---------------------------------------------------------------------------
@@ -394,6 +417,12 @@ def ablate_and_validate(
             model, baseline_logits_list, GENERAL_PROMPTS
         )
         log.info("  KL divergence: %.4f", kl)
+
+        # Generate sample to check coherence
+        log.info("Generating sample with ablation...")
+        sample_prompt = "The capital of France is"
+        sample_output = generate_with_ablation(model, sample_prompt)
+        log.info("  Output: %r", sample_output)
 
     # Compute reduction
     separation_reduction = (
