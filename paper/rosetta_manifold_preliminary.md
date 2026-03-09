@@ -233,12 +233,12 @@ Transfer experiments at proxy model scale showed separation reductions of 45–7
 
 | Milestone | Status | Evidence |
 |:----------|:-------|:---------|
-| Dataset generation (N=100) | ✅ Complete | `data/credibility_pairs.jsonl` |
-| DoM extraction (proxy models) | ✅ Validated | 10 models, 100% separation |
-| LAT extraction (proxy models) | ✅ Validated | PCA-based, high DoM agreement |
-| PRH test (proxy models) | ✅ Preliminary pass | avg sim > 0.5 |
-| Ablation (proxy models) | ✅ 100% separation reduction | KL > 0.2 at small scale |
-| Full pipeline (7B/8B models) | 🔬 Pending GPU cluster | Vector Institute access required |
+| Dataset generation (N=100) | [Done] Complete | `data/credibility_pairs.jsonl` |
+| DoM extraction (proxy models) | [Done] Validated | 10 models, 100% separation |
+| LAT extraction (proxy models) | [Done] Validated | PCA-based, high DoM agreement |
+| PRH test (proxy models) | [Done] Preliminary pass | avg sim > 0.5 |
+| Ablation (proxy models) | [Done] 100% separation reduction | KL > 0.2 at small scale |
+| Full pipeline (7B/8B models) | [Preliminary] Pending GPU cluster | High-performance compute required |
 
 ---
 
@@ -272,7 +272,7 @@ If the full-scale results confirm the PRH prediction (average cross-architecture
 
 **Scale gap**: The proxy model results (124M–2.7B) may not generalize to 7B+ models. The KL divergence results in particular are expected to change substantially at scale.
 
-**LAT at N=100, d=4096**: The LAT method applies PCA to the difference matrix $\Delta A \in \mathbb{R}^{100 \times 4096}$. Because the number of samples (100) is vastly smaller than the number of dimensions (4096), the covariance matrix is highly rank-deficient (rank ≤ 99). PCA in this regime is susceptible to finding spurious directions that perfectly separate the training data by capitalizing on noise rather than signal. This is a known limitation of LAT at small N relative to d. The fix is to scale the dataset to N=1000+ before running full-scale LAT on 7B/8B models — a straightforward extension since the dataset is synthetically generated. DoM is not affected by this limitation, as it operates on means rather than covariance structure.
+**LAT at N=100, d=4096**: The LAT method applies PCA to the difference matrix $\Delta A \in \mathbb{R}^{100 \times 4096}$. Because the number of samples (100) is vastly smaller than the number of dimensions (4096), the covariance matrix is highly rank-deficient (rank $\le$ 99). PCA in this regime is susceptible to finding spurious directions that perfectly separate the training data by capitalizing on noise rather than signal. This is a known limitation of LAT at small N relative to d. The fix is to scale the dataset to N=1000+ before running full-scale LAT on 7B/8B models — a straightforward extension since the dataset is synthetically generated. DoM is not affected by this limitation, as it operates on means rather than covariance structure.
 
 **Proxy model ablation validity**: The observed KL divergence of 3.16–5.71 at proxy model scales represents severe capability disruption, not merely "elevated" divergence. At this level, ablated proxy models likely produce degenerate outputs (repetition, incoherence). This raises the question of whether the 100% separation reduction observed at proxy scale reflects genuine credibility suppression or wholesale model collapse. We propose a perplexity check as a validity gate: if post-ablation perplexity on a held-out general corpus approaches infinity, the separation metric is moot and the result should be reported as model collapse rather than successful ablation. This check is straightforward to implement and will be included in the full-scale pipeline.
 
