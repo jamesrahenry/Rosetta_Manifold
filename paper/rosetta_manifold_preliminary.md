@@ -191,7 +191,7 @@ To test whether $V_{cred}$ extracted from one model can ablate credibility repre
 
 ## 6. Results
 
-*Note: The results reported below reflect the current state of the pipeline. Full empirical results on Llama 3, Mistral, and Qwen require GPU cluster access (Vector Institute). Results on smaller proxy models (GPT-2, GPT-Neo, OPT families, 124M–2.7B parameters) are available and are reported here as preliminary validation of the methodology.*
+*Note: The results reported below reflect the current state of the pipeline. Full empirical results on Llama 3, Mistral, and Qwen require high-performance GPU cluster access. Results on smaller proxy models (GPT-2, GPT-Neo, OPT families, 124M–2.7B parameters) are available and are reported here as preliminary validation of the methodology.*
 
 ### 6.1 Vector Extraction — Proxy Model Results
 
@@ -274,7 +274,7 @@ If the full-scale results confirm the PRH prediction (average cross-architecture
 
 ### 7.5 Future Directions
 
-1. **Full-scale validation**: Run the complete pipeline on Llama 3 8B, Mistral 7B, and Qwen 2.5 7B using the Vector Institute GPU cluster, with dataset scaled to N=1000+ to address the LAT rank-deficiency limitation.
+1. **Full-scale validation**: Run the complete pipeline on Llama 3 8B, Mistral 7B, and Qwen 2.5 7B using a high-performance GPU cluster, with dataset scaled to N=1000+ to address the LAT rank-deficiency limitation.
 2. **Concept expansion**: Apply the same methodology to honesty, bias, and harmfulness to build a library of transferable semantic directions.
 3. **Larger models**: Test at 70B and 405B scale to assess whether alignment strengthens with model size (as predicted by the PRH).
 4. **Human validation**: Validate the dataset and extracted directions with human annotators to ensure ecological validity.
