@@ -1,7 +1,7 @@
 # Rosetta Manifold: Executive Summary
 ## Resource Request for TELUS SAIF Access
 
-**James Henry** | james.henry@telus.com | TELUS Digital | March 2026
+**James Henry** | james.henry@telus.com | TELUS | March 2026
 
 ---
 
@@ -163,7 +163,7 @@ With SAIF access approved:
 
 **James Henry**
 james.henry@telus.com
-TELUS Digital
+TELUS
 
 **For SAIF resource allocation discussion**
 
