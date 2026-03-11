@@ -14,9 +14,10 @@ set -e  # Exit on error
 
 # Parse arguments
 MODEL=${1:-gpt2}
+CONCEPT=${2:-credibility}
 DATASET="data/credibility_pairs_tiny.jsonl"  # Default: tiny dataset
 
-if [[ "$2" == "--full-dataset" ]]; then
+if [[ "$3" == "--full-dataset" ]]; then
     DATASET="data/credibility_pairs.jsonl"
 fi
 
@@ -24,6 +25,7 @@ echo "========================================"
 echo "CAZ Validation Pipeline"
 echo "========================================"
 echo "Model:   $MODEL"
+echo "Concept: $CONCEPT"
 echo "Dataset: $DATASET"
 echo ""
 
@@ -64,7 +66,8 @@ echo "Phase 2: Analyze CAZ Boundaries"
 echo "========================================"
 python src/analyze_caz.py \
     --input "$RESULT_DIR/caz_extraction.json" \
-    --output-dir "$RESULT_DIR"
+    --output-dir "$RESULT_DIR" \
+    --concept "$CONCEPT"
 
 echo ""
 
@@ -86,13 +89,13 @@ echo ""
 echo "Results directory: $RESULT_DIR"
 echo ""
 echo "Files created:"
-echo "  - caz_extraction.json              (Layer-wise metrics)"
-echo "  - caz_analysis_${MODEL}.json       (CAZ boundaries)"
-echo "  - caz_visualization_${MODEL}.png   (Visualization)"
-echo "  - caz_ablation_comparison.json     (Hypothesis test results)"
+echo "  - caz_extraction.json                       (Layer-wise metrics)"
+echo "  - caz_analysis_${MODEL}.json                (CAZ boundaries)"
+echo "  - caz_visualization_${CONCEPT}_${MODEL}.png (Visualization)"
+echo "  - caz_ablation_comparison.json              (Hypothesis test results)"
 echo ""
 echo "View visualization:"
-echo "  open $RESULT_DIR/caz_visualization_${MODEL}.png"
+echo "  open $RESULT_DIR/caz_visualization_${CONCEPT}_${MODEL}.png"
 echo ""
 echo "Next steps:"
 echo "  1. Review visualization to see CAZ boundaries"
