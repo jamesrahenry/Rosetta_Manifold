@@ -1,0 +1,13 @@
+{
+  "model_id": "facebook/opt-1.3b",
+  "layer": 12,
+  "component": "resid_post",
+  "baseline_separation": 1.256198247273763,
+  "ablated_separation": -2.086162567138672e-07,
+  "separation_reduction": 1.0000001660695332,
+  "kl_divergence": 3.3141199588775634,
+  "kl_threshold": 0.3,
+  "kl_pass": false,
+  "ablation_success": true,
+  "tiny_poc": true
+}

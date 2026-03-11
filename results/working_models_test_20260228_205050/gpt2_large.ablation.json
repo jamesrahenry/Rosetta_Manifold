@@ -1,0 +1,13 @@
+{
+  "model_id": "gpt2-large",
+  "layer": 12,
+  "component": "resid_post",
+  "baseline_separation": 4.410254796346028,
+  "ablated_separation": -3.0199686686197915e-06,
+  "separation_reduction": 1.0000006847605882,
+  "kl_divergence": 3.95112030506134,
+  "kl_threshold": 0.3,
+  "kl_pass": false,
+  "ablation_success": true,
+  "tiny_poc": true
+}

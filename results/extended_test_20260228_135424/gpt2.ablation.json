@@ -1,0 +1,13 @@
+{
+  "model_id": "gpt2",
+  "layer": 7,
+  "component": "resid_post",
+  "baseline_separation": 7.631198883056641,
+  "ablated_separation": -2.78155008951823e-07,
+  "separation_reduction": 1.000000036449713,
+  "kl_divergence": 4.790720224380493,
+  "kl_threshold": 0.3,
+  "kl_pass": false,
+  "ablation_success": true,
+  "tiny_poc": true
+}
