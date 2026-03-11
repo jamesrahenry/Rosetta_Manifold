@@ -47,7 +47,8 @@ Thumbs.db
 logs/
 
 # Phase 2 Results
-results/
+# NOTE: Results are now tracked in git for reproducibility
+# results/ - ENABLED
 outputs/
 
 # HuggingFace and TransformerLens caches
