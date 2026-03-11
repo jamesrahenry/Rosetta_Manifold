@@ -196,6 +196,7 @@ def visualize_caz(
     boundaries: dict,
     output_path: Path,
     model_name: str = "Model",
+    concept: str = "Concept",
 ) -> None:
     """
     Create CAZ visualization showing separation, coherence, and velocity.
@@ -205,6 +206,7 @@ def visualize_caz(
         boundaries: CAZ boundaries
         output_path: Path to save figure
         model_name: Model name for title
+        concept: Concept name for title (e.g., 'Credibility', 'Negation')
     """
     layers = np.array([m["layer"] for m in metrics])
     separations = np.array([m["separation_fisher"] for m in metrics])
@@ -225,7 +227,7 @@ def visualize_caz(
     ax.axvspan(caz_start, caz_end, alpha=0.2, color="green", label="CAZ")
     ax.axvline(caz_peak, color="red", linestyle="--", alpha=0.7, label=f"Peak (L{caz_peak})")
     ax.set_ylabel("Separation (Fisher-normalized)", fontsize=11)
-    ax.set_title(f"Concept Assembly Zone: {model_name}", fontsize=13, fontweight="bold")
+    ax.set_title(f"Concept Assembly Zone: {concept.title()} ({model_name})", fontsize=13, fontweight="bold")
     ax.legend(loc="best")
     ax.grid(alpha=0.3)
 
@@ -259,13 +261,14 @@ def visualize_caz(
 # ---------------------------------------------------------------------------
 
 
-def analyze_caz(input_path: Path, output_dir: Path) -> dict:
+def analyze_caz(input_path: Path, output_dir: Path, concept: str = "concept") -> dict:
     """
     Analyze CAZ from extraction results.
 
     Args:
         input_path: Path to caz_extraction.json
         output_dir: Directory to save analysis results
+        concept: Name of the concept being analyzed (e.g., 'credibility')
 
     Returns:
         Analysis results dictionary
@@ -290,8 +293,8 @@ def analyze_caz(input_path: Path, output_dir: Path) -> dict:
     statistics = compute_caz_statistics(metrics, boundaries)
 
     # Create visualization
-    viz_path = output_dir / f"caz_visualization_{model_name}.png"
-    visualize_caz(metrics, boundaries, viz_path, model_name)
+    viz_path = output_dir / f"caz_visualization_{concept}_{model_name}.png"
+    visualize_caz(metrics, boundaries, viz_path, model_name, concept)
 
     # Compile results
     analysis = {
@@ -337,6 +340,12 @@ def parse_args() -> argparse.Namespace:
         default=0.5,
         help="Threshold percentile for CAZ detection (default: 0.5)",
     )
+    parser.add_argument(
+        "--concept",
+        type=str,
+        default="concept",
+        help="Name of concept being analyzed (e.g., 'credibility', 'negation')",
+    )
     return parser.parse_args()
 
 
@@ -352,7 +361,7 @@ def main() -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    analyze_caz(input_path, output_dir)
+    analyze_caz(input_path, output_dir, args.concept)
 
 
 if __name__ == "__main__":

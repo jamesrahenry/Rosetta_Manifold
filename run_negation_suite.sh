@@ -40,7 +40,8 @@ python src/extract_vectors_caz.py \
 
 python src/analyze_caz.py \
     --input results/negation_gpt2_${TIMESTAMP}/caz_extraction.json \
-    --output-dir results/negation_gpt2_${TIMESTAMP}
+    --output-dir results/negation_gpt2_${TIMESTAMP} \
+    --concept negation
 
 python src/ablate_caz.py \
     --model gpt2 \
@@ -61,7 +62,8 @@ python src/extract_vectors_caz.py \
 
 python src/analyze_caz.py \
     --input results/negation_gpt2xl_${TIMESTAMP}/caz_extraction.json \
-    --output-dir results/negation_gpt2xl_${TIMESTAMP}
+    --output-dir results/negation_gpt2xl_${TIMESTAMP} \
+    --concept negation
 
 python src/ablate_caz.py \
     --model gpt2-xl \
@@ -79,8 +81,8 @@ echo "  GPT-2:    results/negation_gpt2_${TIMESTAMP}/"
 echo "  GPT-2 XL: results/negation_gpt2xl_${TIMESTAMP}/"
 echo ""
 echo "View visualizations:"
-echo "  open results/negation_gpt2_${TIMESTAMP}/caz_visualization_gpt2.png"
-echo "  open results/negation_gpt2xl_${TIMESTAMP}/caz_visualization_gpt2-xl.png"
+echo "  open results/negation_gpt2_${TIMESTAMP}/caz_visualization_negation_gpt2.png"
+echo "  open results/negation_gpt2xl_${TIMESTAMP}/caz_visualization_negation_gpt2-xl.png"
 echo ""
 echo "Compare to credibility results:"
 echo "  results/caz_validation_gpt2_20260310_164336/"

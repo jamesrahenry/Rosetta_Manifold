@@ -43,7 +43,8 @@ python src/extract_vectors_caz.py \
 
 python src/analyze_caz.py \
     --input "$RESULT_DIR_GPT2/caz_extraction.json" \
-    --output-dir "$RESULT_DIR_GPT2"
+    --output-dir "$RESULT_DIR_GPT2" \
+    --concept sentiment
 
 python src/ablate_caz.py \
     --model gpt2 \
@@ -67,7 +68,8 @@ python src/extract_vectors_caz.py \
 
 python src/analyze_caz.py \
     --input "$RESULT_DIR_XL/caz_extraction.json" \
-    --output-dir "$RESULT_DIR_XL"
+    --output-dir "$RESULT_DIR_XL" \
+    --concept sentiment
 
 python src/ablate_caz.py \
     --model gpt2-xl \
@@ -85,8 +87,8 @@ echo "  GPT-2:    $RESULT_DIR_GPT2/"
 echo "  GPT-2 XL: $RESULT_DIR_XL/"
 echo ""
 echo "View visualizations:"
-echo "  open $RESULT_DIR_GPT2/caz_visualization_gpt2.png"
-echo "  open $RESULT_DIR_XL/caz_visualization_gpt2-xl.png"
+echo "  open $RESULT_DIR_GPT2/caz_visualization_sentiment_gpt2.png"
+echo "  open $RESULT_DIR_XL/caz_visualization_sentiment_gpt2-xl.png"
 echo ""
 echo "Compare to previous concepts:"
 echo "  Credibility: results/caz_validation_gpt2_20260310_164336/"
