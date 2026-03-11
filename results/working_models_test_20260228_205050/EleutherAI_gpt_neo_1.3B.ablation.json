@@ -1,0 +1,13 @@
+{
+  "model_id": "EleutherAI/gpt-neo-1.3B",
+  "layer": 12,
+  "component": "resid_post",
+  "baseline_separation": -2.3646240234375,
+  "ablated_separation": -7.62939453125e-06,
+  "separation_reduction": 0.9999967735274379,
+  "kl_divergence": 4.336549568176269,
+  "kl_threshold": 0.3,
+  "kl_pass": false,
+  "ablation_success": true,
+  "tiny_poc": true
+}
