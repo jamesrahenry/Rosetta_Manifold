@@ -16,7 +16,7 @@ If you're here because you work in MI and something looked interesting: great, p
 
 ## The Question
 
-The **Platonic Representation Hypothesis** (Huh et al., 2024) proposes that sufficiently capable models converge on similar internal representations of the world, regardless of architecture or training procedure. If true, a semantic concept like "credibility" should produce geometrically similar vectors across Llama, Mistral, Qwen, and GPT families — alignable via rotation, transferable across models.
+The **[Platonic Representation Hypothesis](https://arxiv.org/abs/2405.07987)** (Huh et al., 2024) proposes that sufficiently capable models converge on similar internal representations of the world, regardless of architecture or training procedure. If true, a semantic concept like "credibility" should produce geometrically similar vectors across Llama, Mistral, Qwen, and GPT families — alignable via rotation, transferable across models.
 
 This project was built to test that. The approach: extract concept directions from multiple architectures using contrastive datasets, align them via Orthogonal Procrustes, and measure convergence.
 
@@ -210,7 +210,7 @@ Frontier-scale compute is the primary remaining blocker for both the PRH and CAZ
 
 ## Background
 
-**Platonic Representation Hypothesis** — Huh et al. (2024): models trained on different data and architectures converge on similar representations of reality.
+**Platonic Representation Hypothesis** — Huh, Cheung, Wang & Isola (2024): models trained on different data and architectures converge on similar representations of reality. [arXiv:2405.07987](https://arxiv.org/abs/2405.07987)
 
 **Difference-of-Means (DoM)** — Arditi et al. (2024), *Refusal in Language Models Is Mediated by a Single Direction*
 
