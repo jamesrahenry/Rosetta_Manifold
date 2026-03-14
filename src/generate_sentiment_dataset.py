@@ -178,58 +178,81 @@ def _extract_json(raw: str):
     return None
 
 
-async def _generate_pair_anthropic(topic: str, domain: str, pair_index: int, model_name: str, client):
-    """Generate one pair via Anthropic API."""
+async def _generate_pair_anthropic(
+    topic: str,
+    domain: str,
+    pair_index: int,
+    model_name: str,
+    client,
+    semaphore: asyncio.Semaphore,
+):
+    """Generate one pair via Anthropic API, rate-limited by semaphore."""
     from openai import RateLimitError
 
     prompt = SENTIMENT_PROMPT.format(topic=topic)
     pair_id = f"{domain}_{pair_index:02d}"
 
-    log.info("  [%s] Generating pair %s — %s", model_name, pair_id, topic)
+    async with semaphore:
+        log.info("  [%s] Generating pair %s — %s", model_name, pair_id, topic)
 
-    try:
-        response = await client.chat.completions.create(
-            model=model_name,
-            max_tokens=512,
-            temperature=0.7,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        for attempt in range(3):
+            try:
+                response = await client.chat.completions.create(
+                    model=model_name,
+                    max_tokens=512,
+                    temperature=0.7,
+                    messages=[{"role": "user", "content": prompt}],
+                )
 
-        text = response.choices[0].message.content
-        data = _extract_json(text)
+                text = response.choices[0].message.content
+                data = _extract_json(text)
 
-        if not data or "positive" not in data or "negative" not in data:
-            log.error("  [%s] Invalid JSON for %s", model_name, pair_id)
-            return None
+                if not data or "positive" not in data or "negative" not in data:
+                    log.error("  [%s] Invalid JSON for %s", model_name, pair_id)
+                    return None
 
-        # Create two records (positive=1, negative=0)
-        positive_record = {
-            "pair_id": pair_id,
-            "label": 1,
-            "domain": domain,
-            "model_name": model_name,
-            "text": data["positive"],
-            "topic": topic,
-        }
+                positive_record = {
+                    "pair_id": pair_id,
+                    "label": 1,
+                    "domain": domain,
+                    "model_name": model_name,
+                    "text": data["positive"],
+                    "topic": topic,
+                }
+                negative_record = {
+                    "pair_id": pair_id,
+                    "label": 0,
+                    "domain": domain,
+                    "model_name": model_name,
+                    "text": data["negative"],
+                    "topic": topic,
+                }
 
-        negative_record = {
-            "pair_id": pair_id,
-            "label": 0,
-            "domain": domain,
-            "model_name": model_name,
-            "text": data["negative"],
-            "topic": topic,
-        }
+                log.info("  [%s] ✓ Generated pair %s", model_name, pair_id)
+                # Small inter-request delay to stay under 60 RPM
+                await asyncio.sleep(1.2)
+                return [positive_record, negative_record]
 
-        log.info("  [%s] ✓ Generated pair %s", model_name, pair_id)
-        return [positive_record, negative_record]
+            except RateLimitError:
+                wait = 30 * (attempt + 1)
+                log.warning(
+                    "  [%s] Rate limited on %s, waiting %ds...",
+                    model_name,
+                    pair_id,
+                    wait,
+                )
+                await asyncio.sleep(wait)
+            except Exception as exc:
+                log.error(
+                    "  [%s] Failed on %s (attempt %d): %s",
+                    model_name,
+                    pair_id,
+                    attempt + 1,
+                    exc,
+                )
+                if attempt < 2:
+                    await asyncio.sleep(5)
 
-    except RateLimitError:
-        log.warning("  [%s] Rate limited on %s, retrying...", model_name, pair_id)
-        await asyncio.sleep(2)
-        return await _generate_pair_anthropic(topic, domain, pair_index, model_name, client)
-    except Exception as exc:
-        log.error("  [%s] Failed on %s: %s", model_name, pair_id, exc)
         return None
 
 
@@ -238,22 +261,31 @@ async def generate_dataset_anthropic(
     output_path: Path,
     api_key: str,
     base_url: str,
+    max_concurrent: int = 8,
 ):
-    """Generate full sentiment dataset via Anthropic-compatible API."""
+    """Generate full sentiment dataset via Anthropic-compatible API.
+
+    max_concurrent: number of simultaneous requests (8 × ~1.2s delay ≈ 40 RPM,
+    safely under the 60 RPM FuelIX limit).
+    """
     from openai import AsyncOpenAI
 
     client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+    semaphore = asyncio.Semaphore(max_concurrent)
 
     log.info("=== Generating Sentiment Polarity Dataset ===")
     log.info("Model: %s", model_name)
     log.info("Output: %s", output_path)
     log.info("Target: 100 pairs (200 statements)")
+    log.info("Concurrency: %d requests (target <60 RPM)", max_concurrent)
     log.info("")
 
     tasks = []
     for domain, topics in DOMAIN_TOPICS.items():
         for idx, topic in enumerate(topics, 1):
-            task = _generate_pair_anthropic(topic, domain, idx, model_name, client)
+            task = _generate_pair_anthropic(
+                topic, domain, idx, model_name, client, semaphore
+            )
             tasks.append(task)
 
     results = await asyncio.gather(*tasks)
@@ -313,11 +345,17 @@ def main():
     args = parser.parse_args()
 
     # Get API credentials
-    api_key = args.api_key or os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY")
-    base_url = args.base_url or os.getenv("ANTHROPIC_BASE_URL") or os.getenv("OPENAI_BASE_URL")
+    api_key = (
+        args.api_key or os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY")
+    )
+    base_url = (
+        args.base_url or os.getenv("ANTHROPIC_BASE_URL") or os.getenv("OPENAI_BASE_URL")
+    )
 
     if not api_key:
-        log.error("No API key found. Set ANTHROPIC_API_KEY or OPENAI_API_KEY environment variable")
+        log.error(
+            "No API key found. Set ANTHROPIC_API_KEY or OPENAI_API_KEY environment variable"
+        )
         return
 
     if not base_url:
