@@ -6,6 +6,14 @@
 
 ---
 
+## A Note on What This Is
+
+This is independent research by someone learning mechanistic interpretability. It is not affiliated with any institution, has not been peer reviewed, and is not intended to be cited as established work. The code runs, the results are real, and the questions are genuine — but the scale is limited (4GB consumer GPU, GPT-2 family only) and the frontier-scale validation that would make the CAZ findings meaningful is still pending compute access.
+
+If you're here because you work in MI and something looked interesting: great, poke around. If you're here looking for production-ready interpretability tooling: wrong repo.
+
+---
+
 ## The Question
 
 The **Platonic Representation Hypothesis** (Huh et al., 2024) proposes that sufficiently capable models converge on similar internal representations of the world, regardless of architecture or training procedure. If true, a semantic concept like "credibility" should produce geometrically similar vectors across Llama, Mistral, Qwen, and GPT families — alignable via rotation, transferable across models.
