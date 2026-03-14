@@ -91,11 +91,18 @@ Both methods are computed and compared via cosine similarity.
 - Tests threshold: average similarity > 0.5
 - Validates Platonic Representation Hypothesis
 
-### Supported Models
+### Models Validated (Proxy Scale)
 ```
-✓ Llama 3 8B     - meta-llama/Meta-Llama-3-8B
-✓ Mistral 7B     - mistralai/Mistral-7B-v0.1
-✓ Qwen 2.5 7B    - Qwen/Qwen2.5-7B
+✓ GPT-2 family   - gpt2, gpt2-medium, gpt2-large, gpt2-xl (12–48 layers)
+✓ GPT-Neo family - gpt-neo-125M, gpt-neo-1.3B, gpt-neo-2.7B
+✓ OPT family     - opt-125m, opt-1.3b, opt-2.7b
+```
+
+### Target Models (Frontier Scale — Pending Compute)
+```
+⏳ Llama 3 70B       - meta-llama/Meta-Llama-3-70B           (80L, hidden_dim=8192, bf16)
+⏳ Qwen 2.5 72B      - Qwen/Qwen2.5-72B                      (80L, hidden_dim=8192, bf16)
+⏳ Mistral Large 2   - mistralai/Mistral-Large-Instruct-2407  (88L, hidden_dim=12288, bf16)
 ```
 
 ---
@@ -120,36 +127,35 @@ cat results/phase2_vectors.json
 
 ---
 
-## 📊 Expected Output
+## 📊 Actual Output (Proxy Scale)
 
-### Single Model Result
+### GPT-2 XL — Credibility (authoritative CPU/fp32 result)
 ```json
 {
-  "model_id": "meta-llama/Meta-Llama-3-8B",
-  "best_layer": 18,
-  "separation": 12.45,
-  "dom_vector": [...],
-  "lat_vector": [...],
-  "dom_lat_similarity": 0.92,
-  "hidden_dim": 4096,
-  "n_layers": 32
+  "model_id": "gpt2-xl",
+  "n_layers": 48,
+  "hidden_dim": 1600,
+  "peak_layer": 44,
+  "peak_separation": 0.772,
+  "caz_width": 47,
+  "hypothesis_supported": false
 }
 ```
 
-### Cross-Model Alignment (PRH Test)
+### Frontier-Scale Output Format (Pending)
 ```json
 {
-  "models": ["Meta-Llama-3-8B", "Mistral-7B-v0.1", "Qwen2.5-7B"],
-  "dom_similarities": {
-    "Meta-Llama-3-8B vs Mistral-7B-v0.1": 0.67,
-    "Meta-Llama-3-8B vs Qwen2.5-7B": 0.58,
-    "Mistral-7B-v0.1 vs Qwen2.5-7B": 0.61
-  },
-  "avg_dom_similarity": 0.62,
-  "avg_lat_similarity": 0.68,
-  "prh_pass": true  ← Average > 0.5 threshold
+  "model_id": "meta-llama/Meta-Llama-3-70B",
+  "n_layers": 80,
+  "hidden_dim": 8192,
+  "peak_layer": "TBD",
+  "peak_separation": "TBD",
+  "caz_width": "TBD",
+  "hypothesis_supported": "TBD"
 }
 ```
+
+> **Note on precision**: fp16 produces invalid separation metrics at depth — peak layer shifted 7–15 positions in GPU runs vs CPU/fp32. Frontier runs must use bf16 or fp32.
 
 ---
 
@@ -172,10 +178,15 @@ cat results/phase2_vectors.json
 
 ## 💻 System Requirements
 
-### Hardware
-- **GPU**: 16GB+ VRAM recommended (NVIDIA with CUDA)
-- **RAM**: 32GB+ recommended
-- **CPU**: Works but ~10x slower
+### Hardware (Current — Proxy Scale)
+- **GPU**: RTX 500 Ada 4GB (local) — fp16 for GPT-2 family; fp32 on CPU for GPT-2 XL
+- **RAM**: 16GB+ sufficient
+- **CPU**: Used for all GPT-2 XL fp32 runs (~3.2x slower than GPU for GPT-2)
+
+### Hardware (Required — Frontier Scale)
+- **GPU**: ~70GB VRAM in bf16 (2x H100 80GB or 4x A100 80GB)
+- **Precision**: bf16 mandatory — fp16 invalid at 48+ layer depth
+- **RAM**: 128GB+ recommended
 
 ### Software
 - **Python**: 3.10+
@@ -192,17 +203,12 @@ opik>=0.1.0 (optional)
 
 ---
 
-## 📈 Performance Characteristics
+## 📈 Performance Characteristics (Measured)
 
-### Model Loading
-- Llama 3 8B: ~14GB VRAM (fp16)
-- Mistral 7B: ~13GB VRAM (fp16)
-- Qwen 2.5 7B: ~13GB VRAM (fp16)
-
-### Extraction Speed
-- Single model, single layer: ~30 seconds
-- Layer sweep (10 layers): ~5 minutes
-- All three models: ~15-20 minutes
+### Proxy Scale (GPU vs CPU)
+- GPT-2 (12L), 200 pairs: ~67s GPU / ~comparable CPU
+- GPT-2 XL (48L), 200 pairs: ~25 min GPU (fp16, invalid) / ~64 min CPU (fp32, authoritative)
+- All 6 suites (3 concepts × 2 models): 78 min GPU / ~249 min CPU
 
 ### Dataset Size
 - Current: 100 pairs (200 samples)
@@ -311,7 +317,7 @@ The codebase provides:
 - Comprehensive test coverage (unit + integration)
 - Clear documentation and usage guides
 
-**Ready to extract credibility vectors from Llama 3, Mistral, and Qwen! 🚀**
+**Proxy-scale extraction complete. Pipeline ready for frontier models once compute is secured.**
 
 ---
 

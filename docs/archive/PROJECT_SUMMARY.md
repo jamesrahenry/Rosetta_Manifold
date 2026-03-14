@@ -136,14 +136,21 @@ numpy >= 1.24.0             - Numerical computing
 opik >= 0.1.0              - Experiment tracking
 ```
 
-### Models Supported
+### Models Validated (Proxy Scale)
 ```
-✓ Llama 3 8B     - meta-llama/Meta-Llama-3-8B
-✓ Mistral 7B     - mistralai/Mistral-7B-v0.1
-✓ Qwen 2.5 7B    - Qwen/Qwen2.5-7B
+✓ GPT-2 family   - gpt2, gpt2-medium, gpt2-large, gpt2-xl (124M–1.5B)
+✓ GPT-Neo family - gpt-neo-125M, gpt-neo-1.3B, gpt-neo-2.7B
+✓ OPT family     - opt-125m, opt-1.3b, opt-2.7b
 ```
 
-All three share hidden_dim=4096, enabling direct vector comparison.
+### Target Models (Frontier Scale — Pending Compute)
+```
+⏳ Llama 3 70B       - meta-llama/Meta-Llama-3-70B           (80L, hidden_dim=8192)
+⏳ Qwen 2.5 72B      - Qwen/Qwen2.5-72B                      (80L, hidden_dim=8192)
+⏳ Mistral Large 2   - mistralai/Mistral-Large-Instruct-2407  (88L, hidden_dim=12288)
+```
+
+Requires bf16 precision and multi-GPU infrastructure (~70GB VRAM each). fp16 produces invalid separation metrics at this depth — empirically confirmed.
 
 ---
 
@@ -229,50 +236,36 @@ python tests/test_smoke.py
 
 ---
 
-## 📈 Expected Results
+## 📈 Empirical Results (Proxy Scale)
 
-### Phase 2: Vector Extraction
+### CAZ Extraction — GPT-2 (12L, fp32, confirmed by GPU replication)
 
-**Per-Model Output**:
+| Concept | Peak Layer | Peak S | Ablation Red | Ablation KL |
+|---------|-----------|--------|--------------|-------------|
+| Credibility | 11 (92%) | 0.695 | 80.0% | 0.633 |
+| Negation | 10 (83%) | 0.412 | 80.3% | 0.011 |
+| Sentiment | 10 (83%) | 0.329 | 63.7% | 0.045 |
+
+### CAZ Extraction — GPT-2 XL (48L, CPU/fp32 only — authoritative)
+
+| Concept | Peak Layer | Peak S | Ablation Red | Ablation KL |
+|---------|-----------|--------|--------------|-------------|
+| Credibility | 44 (92%) | 0.772 | 81.0% | 0.009 |
+| Negation | 39 (81%) | 0.434 | 74.5% | 0.002 |
+| Sentiment | 44 (92%) | 0.372 | 76.0% | 0.002 |
+
+> **Note**: GPU fp16 results for GPT-2 XL are invalid (peak layer shifts 7–15 positions due to fp16 rounding at depth). CPU fp32 results above are authoritative.
+
+### Frontier-Scale Output Format (Pending)
 ```json
 {
-  "model_id": "meta-llama/Meta-Llama-3-8B",
-  "best_layer": 18,
-  "separation": 12.45,
-  "dom_lat_similarity": 0.92,
-  "hidden_dim": 4096
-}
-```
-
-**Cross-Model Alignment (PRH Test)**:
-```json
-{
-  "avg_dom_similarity": 0.62,
-  "avg_lat_similarity": 0.68,
-  "prh_pass": true  // threshold = 0.5
-}
-```
-
-### Phase 3: Ablation Validation
-
-**Single Model**:
-```json
-{
-  "separation_reduction": 0.906,  // 90.6%
-  "kl_divergence": 0.12,          // < 0.2
-  "ablation_success": true,
-  "kl_pass": true
-}
-```
-
-**Transfer Test**:
-```json
-{
-  "transfer_test": true,
-  "source_model": "llama3",
-  "target_model": "mistral",
-  "separation_reduction": 0.75,   // 75% (still good!)
-  "kl_divergence": 0.15
+  "model_id": "meta-llama/Meta-Llama-3-70B",
+  "n_layers": 80,
+  "hidden_dim": 8192,
+  "peak_layer": "TBD",
+  "peak_separation": "TBD",
+  "caz_width": "TBD",
+  "hypothesis_supported": "TBD"
 }
 ```
 
@@ -308,23 +301,26 @@ python tests/test_smoke.py
 
 ## 💻 System Requirements
 
-### Hardware
-- **GPU**: 16GB+ VRAM (NVIDIA CUDA 11.8+)
-  - Required for model inference
-  - Can run on CPU (10x slower)
-- **RAM**: 32GB+ recommended
-- **Storage**: ~50GB for model weights
+### Hardware (Proxy Scale — Current)
+- **GPU**: RTX 500 Ada 4GB (local) — sufficient for GPT-2 family in fp16; fp32 runs on CPU
+- **RAM**: 16GB+ sufficient for proxy models
+- **Storage**: ~20GB for proxy model weights
+
+### Hardware (Frontier Scale — Required)
+- **GPU**: ~70GB VRAM in bf16 (e.g., 2x H100 80GB or 4x A100 80GB)
+- **Precision**: bf16 mandatory — fp16 produces invalid results at 48+ layer depth
+- **RAM**: 128GB+ recommended
+- **Storage**: ~140GB per 70B model (fp32)
 
 ### Software
 - **Python**: 3.10+
 - **OS**: Linux, macOS, WSL2
 - **Optional**: Docker (for Opik)
 
-### Performance
-- **Phase 1** (dataset): ~10-30 min (API-dependent)
-- **Phase 2** (extraction): ~15-20 min (all 3 models)
-- **Phase 3** (ablation): ~30-45 min (full suite)
-- **Total**: ~1-2 hours for complete pipeline
+### Performance (Proxy Scale, Measured)
+- **GPU rerun** (all 6 suites, RTX 500 Ada): 78 minutes total
+- **CPU baseline** (same 6 suites): ~249 minutes (~3.2x slower)
+- **Per-suite** (GPT-2 + GPT-2 XL, one concept): ~26 min GPU / ~83 min CPU
 
 ---
 
@@ -418,24 +414,44 @@ Test Cases:         ~30
 
 ---
 
-## 🎯 Success Criteria - All Met ✅
+## 🎯 Success Criteria
 
 | Criterion | Target | Actual | Status |
 |:----------|:-------|:-------|:-------|
-| Dataset size | N=100 pairs | 100 pairs | ✅ |
-| Label balance | 50/50 | 100/100 | ✅ |
-| Models supported | 3 | Llama3, Mistral, Qwen | ✅ |
+| Dataset size | N=100 pairs | 100 pairs (+ negation 40, sentiment 198) | ✅ |
+| Label balance | 50/50 | ✅ balanced | ✅ |
+| Proxy models validated | 10 | 10 (GPT-2, GPT-Neo, OPT families) | ✅ |
+| Concepts validated | 3 | Credibility, Negation, Sentiment | ✅ |
 | Extraction methods | 2 | DoM + LAT | ✅ |
-| PRH threshold | 0.5 | Framework ready | ✅ |
-| Ablation reduction | >50% | Math validated | ✅ |
-| KL divergence | <0.2 | Framework ready | ✅ |
+| Ablation reduction | >50% | 63–100% across all proxy models | ✅ |
+| KL divergence (<0.2) | at scale | Not yet — 3.16–5.71 at proxy scale (expected at frontier) | ⏳ |
+| PRH cross-architecture | threshold 0.5 | Not yet — requires frontier-scale matched hidden_dim | ⏳ |
+| Bounded CAZ regions | distinct Pre/Post | Not yet — full-width at 48L; requires 70B+ depth | ⏳ |
+| GPU acceleration | operational | ✅ RTX 500 Ada, 3.2x speedup; fp32 constraint documented | ✅ |
 | Test coverage | Core algos | 100% | ✅ |
-| Documentation | Complete | 2000+ lines | ✅ |
+| Documentation | Current | Updated 2026-03-14 | ✅ |
 
 ---
 
-## 🏅 Project Completion Status
+## 🏅 Project Status
 
+```
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║        ROSETTA MANIFOLD - PROXY SCALE COMPLETE               ║
+║                                                               ║
+║  Phase 1 (C1): Dataset Generation              ✅ Done       ║
+║  Phase 2 (C2): Vector Extraction (proxy)       ✅ Done       ║
+║  Phase 3 (C3): Ablation Validation (proxy)     ✅ Done       ║
+║  CAZ Framework: 3 concepts × 2 models          ✅ Done       ║
+║  GPU Acceleration: integrated + validated      ✅ Done       ║
+║                                                               ║
+║  Frontier Validation (70B+):               ⏳ Pending       ║
+║  Compute required: 2x H100 80GB (bf16)                       ║
+║                                                               ║
+║  Publication Ready:  Pending frontier results                 ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
 ```
 ╔═══════════════════════════════════════════════════════════════╗
 ║                                                               ║
@@ -509,9 +525,10 @@ less src/ablate_vectors.py
 **Tagline**: Decoding AI Through Universal Semantic Vectors
 **Focus**: Transferable AI Interpretability via Platonic Representation Hypothesis
 **Concept**: Credibility (governance-relevant semantic)
-**Models**: Llama 3, Mistral, Qwen (7B/8B scale)
-**Status**: ✅ Complete (All 3 phases implemented, tested, documented)
-**Date**: 2026-02-24
+**Models validated**: GPT-2, GPT-Neo, OPT families (124M–2.7B, proxy scale)
+**Target models**: Llama 3 70B, Qwen 2.5 72B, Mistral Large 2 (frontier scale)
+**Status**: Proxy-scale complete; frontier validation pending compute access
+**Last updated**: 2026-03-14
 
 ---
 
@@ -526,7 +543,7 @@ The project successfully:
 - ✅ Provides cross-architecture transfer testing
 - ✅ Delivers comprehensive testing and documentation
 
-**Ready for empirical validation, publication, and real-world deployment! 🚀**
+**Proxy-scale methodology proven. Ready for frontier-scale validation once compute is secured.**
 
 ---
 
