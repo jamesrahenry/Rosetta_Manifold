@@ -3,7 +3,7 @@
 
 **Date**: 2026-03-11
 **Author**: James Henry (TELUS Research)
-**Status**: Complete - Ready for Scale-Up
+**Status**: Proxy-Scale Complete — Frontier-Scale Validation Pending
 
 ---
 
@@ -425,21 +425,23 @@ python src/compare_concepts.py --concept new_concept
 # Results automatically categorized by type
 ```
 
-### Scaling to Larger Models (7B+)
+### Scaling to Frontier Models (70B+)
+
+**Why frontier scale, not 7B**: GPT-2 XL (1.5B, 48 layers) still shows near-full-width CAZ (81–100% of depth). 7B models at 32 layers are unlikely to resolve this. Bounded CAZ regions with distinct Pre/Post zones require 70B+ architectures (80+ layers).
+
+**Precision requirement**: fp16 produces invalid separation metrics at depth — empirically confirmed at 48 layers (peak layer shifts 7–15 positions). All frontier runs must use bf16 or fp32.
 
 **Compute Requirements**:
 
-| Model Size | VRAM | Time (Est) | Hardware |
-|:-----------|:-----|:-----------|:---------|
-| 7B | 16GB | 30 min | Consumer GPU |
-| 13B | 24GB | 1 hour | A100 40GB |
-| 70B | 80GB | 3-4 hours | Multi-GPU |
+| Model Size | VRAM (bf16) | Hardware |
+|:-----------|:------------|:---------|
+| 70B | ~140GB fp32 / ~70GB bf16 | 2x H100 80GB or 4x A100 80GB |
+| 72B (Qwen) | ~70GB bf16 | same |
 
-**Recommended Approach**:
-1. Start with credibility on Llama 3 8B (validates methodology at scale)
-2. Expand to 3-5 key concepts
-3. Test PRH at 7B scale (Llama, Mistral, Qwen)
-4. Scale to 70B once patterns confirmed
+**Target models**:
+- Llama 3 70B (`meta-llama/Meta-Llama-3-70B`) — 80 layers
+- Qwen 2.5 72B (`Qwen/Qwen2.5-72B`) — 80 layers
+- Mistral Large 2 (`mistralai/Mistral-Large-Instruct-2407`) — 88 layers
 
 ---
 
@@ -450,45 +452,34 @@ python src/compare_concepts.py --concept new_concept
 2. ⏳ Create normalized JSON export of all results
 3. ⏳ Generate visualization dashboard (model x concept heatmap)
 
-### Short-Term (Month 1)
-1. Test 5-10 additional concepts:
+### Short-Term (Requires Frontier Compute)
+1. Validate on frontier models (70B+):
+   - Llama 3 70B
+   - Qwen 2.5 72B
+   - Mistral Large 2
+   - Run in bf16; fp16 is not acceptable at this depth
+
+2. Test 5-10 additional concepts at frontier scale:
    - **Epistemic**: Honesty, Uncertainty, Confidence
    - **Syntactic**: Tense, Plurality, Modality
    - **Affective**: Anger, Fear, Joy
-   - **Temporal**: Past/Present/Future
    - **Ethical**: Harmfulness, Bias
 
-2. Validate on 7B models:
-   - Llama 3 8B
-   - Mistral 7B
-   - Qwen 2.5 7B
+3. Confirm bounded CAZ regions with distinct Pre/Post zones
+4. Cross-architecture PRH test at matched scale
 
-3. Build automation scripts:
-   - Batch concept generation
-   - Multi-model extraction pipeline
-   - Auto-reporting
-
-### Medium-Term (Quarter 1)
-1. Expand model coverage:
-   - Gemma 2 7B
-   - Phi-3 Medium
-   - Falcon 7B
-
-2. Build database + dashboard:
-   - SQLite backend
-   - Web UI for exploration
-   - CSV export functionality
-
-3. Publication preparation:
-   - Complete empirical results at 7B scale
+### Medium-Term
+1. Build automation pipeline for batch concept extraction
+2. Publication preparation:
+   - Complete empirical results at frontier scale
    - Generate publication figures
-   - Write methodology paper
+   - Write CAZ + PRH methodology paper
 
-### Long-Term (Year 1)
-1. Scale to 100+ concepts
-2. Test at 70B scale
-3. Deploy production API for credibility detection
-4. Integrate with TELUS AI governance framework
+### Long-Term
+1. Scale to 100+ concepts across frontier architectures
+2. Deploy production API for credibility detection
+3. Integrate with TELUS AI governance framework
+4. AMC Phase 3: unlabeled manifold detection
 
 ---
 
@@ -601,13 +592,13 @@ python src/compare_concepts.py --concept new_concept
 ✅ **Scalable framework** (ready for 100s of concepts)
 ⚠️ **Partial PRH support** (weak form validated, strong form not supported)
 
-**Ready for**: 7B-scale validation, concept expansion, and production deployment.
+**Ready for**: Frontier-scale validation (70B+, bf16), concept expansion, and production deployment.
 
 ---
 
-**Project Status**: ✅ **COMPLETE**
-**Next Milestone**: Scale to Llama 3 8B, Mistral 7B, Qwen 2.5 7B
-**Timeline**: Q1 2026 for publication-ready results
+**Project Status**: ✅ **Proxy-Scale Complete** — Frontier validation pending compute access
+**Next Milestone**: Frontier-scale runs (Llama 3 70B, Qwen 2.5 72B, Mistral Large 2) in bf16
+**Timeline**: Publication-ready results within 1 week of compute access
 
 **Contact**: jamesrahenry (GitHub)
 **Organization**: TELUS Research & Innovation

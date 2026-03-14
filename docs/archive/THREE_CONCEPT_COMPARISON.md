@@ -16,6 +16,8 @@ Tested three distinct semantic concepts across GPT-2 (12L) and GPT-2 XL (48L):
 
 ## Results Summary Table
 
+All results from CPU runs (fp32). GPU replication on 2026-03-14 confirmed GPT-2 numbers to within rounding; GPT-2 XL GPU results are unreliable due to fp16 numerical drift at 48-layer depth and should not be used for scientific comparison — see precision note below.
+
 ### GPT-2 (12 Layers)
 
 | Concept | Dataset Size | Peak Layer | Peak S | Ablation Red | Ablation KL |
@@ -24,13 +26,15 @@ Tested three distinct semantic concepts across GPT-2 (12L) and GPT-2 XL (48L):
 | **Negation** | 20 pairs | 10 (83%) | 0.412 | 80.3% | 0.011 |
 | **Sentiment** | 100 pairs | 10 (83%) | **0.329** | 63.7% | 0.045 |
 
-### GPT-2 XL (48 Layers)
+### GPT-2 XL (48 Layers) — CPU/fp32 only
 
 | Concept | Dataset Size | Peak Layer | Peak S | Ablation Red | Ablation KL |
 |---------|--------------|------------|--------|--------------|-------------|
 | **Credibility** | 20 pairs | 44 (92%) | **0.772** | 81.0% | 0.009 |
 | **Negation** | 20 pairs | 39 (81%) | 0.434 | 74.5% | 0.002 |
 | **Sentiment** | 100 pairs | 44 (92%) | **0.372** | 76.0% | 0.002 |
+
+> **Precision note**: GPU fp16 runs for GPT-2 XL produced peak layer shifts of 7–15 positions relative to fp32 and degenerate ablation results for credibility (all-zero separations). This is expected — fp16 accumulates enough rounding error across 48 layers of a 1600-dim model to corrupt the Fisher-normalized separation metric. GPT-2 XL results above are authoritative. For modern frontier-scale models (70B+), this constraint means fp32 or bf16 is required, which drives the compute requirements discussed in the resource proposal.
 
 ---
 
@@ -341,8 +345,9 @@ open results/20260310_233429_sentiment_gpt2xl/caz_visualization_gpt2-xl.png     
 ## Summary Statistics
 
 ### Total Experiments Run
-- **3 concepts** × **2 models** = 6 full CAZ validations
-- **Total runtime**: ~240 minutes (4 hours)
+- **3 concepts** × **2 models** = 6 full CAZ validations (CPU/fp32, authoritative)
+- GPU replication run 2026-03-14: 6 additional runs, GPT-2 results confirmed, GPT-2 XL fp16 results discarded
+- **Total runtime**: ~240 minutes CPU (4 hours); ~78 minutes GPU (all 6 runs combined)
 - **Total statements**: 258 (40 credibility, 40 negation, 198 sentiment)
 - **Total layers analyzed**: 60 (12 + 48 for each of 3 concepts)
 
@@ -367,13 +372,14 @@ Three distinct concept profiles identified:
 - Concept taxonomy emerges from geometric signatures
 - Intervention strategies should be concept-type aware
 
-**Next**: Test additional concepts to expand taxonomy and validate archetypes
+**Next**: Test additional concepts to expand taxonomy and validate archetypes at frontier scale (70B+)
 
 ---
 
 **Total Project Status**:
 - ✅ CAZ framework implemented and validated
 - ✅ Three concept types tested
-- ✅ Cross-model consistency confirmed
+- ✅ Cross-model consistency confirmed (CPU fp32, GPU-replicated for GPT-2)
 - ✅ Concept-specific assembly profiles identified
-- 📊 Ready for publication or 70B-scale testing
+- ✅ GPU acceleration validated for pipeline (fp32 required for large models)
+- 📊 Ready for publication or frontier-scale testing (70B+)
