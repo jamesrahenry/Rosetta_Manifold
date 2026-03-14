@@ -52,16 +52,13 @@ log "============================================================"
 
 # Confirm CUDA is visible before spending any time on downloads
 python3 -c "
-import sys
-sys.path.insert(0, '..')
-import torch
-from shared.gpu_utils import log_device_info, get_device, get_dtype, log_vram
-device = get_device()
-if device != 'cuda':
+import sys, torch
+if not torch.cuda.is_available():
     print('ERROR: CUDA not available — aborting GPU rerun')
     sys.exit(1)
-log_device_info(device, get_dtype(device))
-log_vram('preflight')
+props = torch.cuda.get_device_properties(0)
+print(f'GPU: {props.name}  VRAM: {props.total_memory/1024**3:.1f} GB')
+print(f'torch: {torch.__version__}  CUDA: {torch.version.cuda}')
 " | tee -a "$LOG_DIR/summary.log" || die "GPU not available"
 
 for ds in data/credibility_pairs.jsonl data/negation_pairs.jsonl data/sentiment_pairs.jsonl; do
@@ -123,7 +120,7 @@ log ""
 # ── Suite 2: Negation ─────────────────────────────────────────────────────────
 
 log "============================================================"
-log "  Suite 2/3: Negation  (40 pairs, gpt2 + gpt2-xl)"
+log "  Suite 2/3: Negation  (200 pairs, gpt2 + gpt2-xl)"
 log "============================================================"
 
 NEG_GPT2="results/gpu_negation_gpt2_${TIMESTAMP}"
@@ -173,7 +170,7 @@ log ""
 # ── Suite 3: Sentiment ────────────────────────────────────────────────────────
 
 log "============================================================"
-log "  Suite 3/3: Sentiment  (198 pairs, gpt2 + gpt2-xl)"
+log "  Suite 3/3: Sentiment  (200 pairs, gpt2 + gpt2-xl)"
 log "============================================================"
 
 SENT_GPT2="results/gpu_sentiment_gpt2_${TIMESTAMP}"
