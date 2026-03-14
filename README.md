@@ -1,16 +1,20 @@
 # Rosetta Manifold
 
-**Empirical validation of the Concept Assembly Zone (CAZ) framework across transformer architectures**
+**Cross-architecture semantic vector analysis and Concept Assembly Zone empirical validation**
 
 *James Henry — March 2026*
 
 ---
 
-Transformer language models develop geometric representations of semantic concepts across their depth. This project asks: *where* in the network does a concept like credibility, negation, or sentiment transition from vague syntactic probability into a stable, extractable direction — and is that location consistent across model architectures?
+## The Question
 
-The answer is formalized as the **Concept Assembly Zone (CAZ)**: a contiguous sequence of middle-to-late layers where concept separation grows, coherence peaks, and ablation is most surgically effective. This repository contains the empirical pipeline that tests that framework.
+The **Platonic Representation Hypothesis** (Huh et al., 2024) proposes that sufficiently capable models converge on similar internal representations of the world, regardless of architecture or training procedure. If true, a semantic concept like "credibility" should produce geometrically similar vectors across Llama, Mistral, Qwen, and GPT families — alignable via rotation, transferable across models.
 
-The theoretical basis is in the companion paper: [**Concept Assembly Zone**](https://github.com/jamesrahenry/Concept_Assembly_Zone).
+This project was built to test that. The approach: extract concept directions from multiple architectures using contrastive datasets, align them via Orthogonal Procrustes, and measure convergence.
+
+In the course of doing that, a more specific question emerged: **where** in the network does a concept become stably extractable? Not just whether the direction exists, but when across model depth it crystallizes — and whether that timing is itself architecture-stable. That question became the [**Concept Assembly Zone (CAZ)**](https://github.com/jamesrahenry/Concept_Assembly_Zone) framework, and the bulk of the empirical work here tests it.
+
+The two questions are related. If CAZ position is concept-specific but architecture-stable (Prediction 2 of the CAZ framework), that is itself evidence for the PRH: models don't just converge on *what* they represent, they converge on *when* they assemble it. The frontier-scale cross-architecture work — pending compute — is where both questions get answered together.
 
 ---
 
@@ -24,14 +28,16 @@ Three concepts × two model scales (GPT-2 124M, GPT-2-XL 1.5B), run on consumer 
 | Negation | Syntactic | L8 / 12 | L39 / 48 | ~81% |
 | Sentiment | Affective | L9 / 12 | L44 / 48 | ~88–92% |
 
-**Concepts assemble late.** In both model scales, peak separation occurs in the final 10–20% of model depth — not at the output layers, and not in mid-network.
+**Concepts assemble late.** Peak separation occurs in the final 10–20% of model depth — consistent across both scales.
+
+**Relative CAZ position is concept-specific and scale-invariant.** Credibility peaks at ~92% depth in both GPT-2 and GPT-2-XL; negation at ~81%. This is the proxy-scale confirmation of CAZ Prediction 2 — and a preliminary signal for the PRH: if the *timing* of assembly is stable across architectures, the representations are likely converging on something real.
 
 **Concept type predicts assembly profile:**
-- *Epistemic* (credibility): strong signal, late peak, highly entangled with general intelligence — hardest to ablate cleanly
+- *Epistemic* (credibility): strong signal, late peak, entangled with general capability — hardest to ablate cleanly
 - *Syntactic* (negation): moderate signal, earlier peak, orthogonal to other concepts — cleanest ablation
-- *Affective* (sentiment): weaker signal, scale-dependent timing, orthogonal — improves markedly at larger scale
+- *Affective* (sentiment): weaker signal, scale-dependent timing — improves markedly at larger scale
 
-**Ablation works.** Orthogonal projection at the CAZ peak removes 100% of concept signal in GPT-2 scale models. KL divergence passes the <0.2 threshold for syntactic concepts at proxy scale; epistemic concepts require frontier scale for clean separation (expected — they're more entangled with general capability).
+**Ablation works at proxy scale.** Orthogonal projection at the CAZ peak removes 100% of concept signal. KL divergence passes the <0.2 threshold for syntactic concepts; epistemic concepts require frontier scale (expected — more entangled with general capability).
 
 ---
 
@@ -75,10 +81,11 @@ Phase 1  Dataset generation
          Contrastive pairs (credibility, negation, sentiment)
          N=100 pairs per concept, 4 domains each
 
-Phase 2  Vector extraction
+Phase 2  Vector extraction + CAZ analysis
          DoM (Difference-of-Means) and LAT (Linear Artificial Tomography)
          Layer-wise S/C/v metrics via TransformerLens hooks
          CAZ boundary detection
+         Cross-architecture alignment via Orthogonal Procrustes
 
 Phase 3  Ablation validation
          Orthogonal projection to remove concept directions
@@ -96,9 +103,9 @@ Rosetta_Manifold/
 │   ├── generate_dataset.py       Phase 1: contrastive pair generation
 │   ├── generate_negation_dataset.py
 │   ├── generate_sentiment_dataset.py
-│   ├── extract_vectors.py        Phase 2: DoM/LAT extraction + alignment
+│   ├── extract_vectors.py        Phase 2: DoM/LAT extraction + Procrustes alignment
 │   ├── extract_vectors_caz.py    Phase 2: layer-wise CAZ metrics
-│   ├── analyze_caz.py            Phase 2: boundary detection + visualization
+│   ├── analyze_caz.py            Phase 2: CAZ boundary detection + visualization
 │   ├── ablate_vectors.py         Phase 3: orthogonal projection ablation
 │   ├── ablate_caz.py             Phase 3: position-specific ablation test
 │   ├── align_vectors.py          Cross-architecture Procrustes alignment
@@ -121,6 +128,7 @@ Rosetta_Manifold/
 │   ├── Spec 1 -- Credibility Contrastive Dataset.md
 │   ├── Spec 2 -- Vector Extraction & Alignment Pipeline.md
 │   ├── Spec 3 -- Heretic Optimization and Ablation.md
+│   ├── setup/                  Hardware and environment setup guides
 │   └── archive/                Session logs and interim reports
 ├── paper/                      Preliminary write-ups and resource proposals
 └── experiments/                Jupyter notebooks
@@ -147,9 +155,9 @@ bash scripts/run_caz_validation.sh
 bash scripts/run_gpu_rerun.sh
 ```
 
-**Requirements:** Python 3.11+, PyTorch with CUDA (fp16). GPT-2 models are downloaded automatically via HuggingFace and cached. All proxy-scale experiments run on a 4GB GPU.
+**Requirements:** Python 3.11+, PyTorch with CUDA. GPT-2 models download automatically via HuggingFace. All proxy-scale experiments run on a 4GB GPU.
 
-For the full requirements including dataset generation dependencies (OpenAI/Ollama API, Opik tracking), see [`requirements.txt`](requirements.txt).
+For the full requirements including dataset generation dependencies (OpenAI/Ollama API, Opik tracking), see [`requirements.txt`](requirements.txt). For GPU setup on systems without a system CUDA toolkit installed, see [`docs/setup/gpu_setup.md`](docs/setup/gpu_setup.md).
 
 ---
 
@@ -163,7 +171,7 @@ pytest tests/test_math_only.py tests/test_smoke.py -v
 pytest tests/ -v
 ```
 
-Two known pre-existing test failures in `test_extract_vectors.py` (`test_dom_lat_agreement`, `test_full_pipeline_mock`) are caused by low-quality synthetic data in the test fixtures, not code bugs. All math tests pass.
+Two known pre-existing failures in `test_extract_vectors.py` (`test_dom_lat_agreement`, `test_full_pipeline_mock`) are caused by low-quality synthetic data in the test fixtures, not code bugs. All math tests pass.
 
 ---
 
@@ -174,32 +182,35 @@ Two known pre-existing test failures in `test_extract_vectors.py` (`test_dom_lat
 | Phase 1: Dataset generation | Complete — 3 concepts, 100 pairs each |
 | Phase 2: Vector extraction | Complete — DoM + LAT, all proxy models |
 | Phase 2: CAZ metrics | Complete — S/C/v across all layers |
+| Phase 2: Cross-arch alignment | Implemented — proxy scale only |
 | Phase 3: Ablation | Complete — proxy scale validated |
 | Proxy scale (GPT-2, GPT-Neo, OPT) | **Validated — 10 models** |
 | Frontier scale (Llama 3 70B, Qwen 2.5 72B) | Pending compute |
+| Cross-architecture PRH validation | Pending frontier scale |
 | Publication | Preliminary paper in `paper/` |
 
-Frontier-scale validation is the primary remaining blocker. The methodology and proxy results are complete.
+Frontier-scale compute is the primary remaining blocker for both the PRH and CAZ work. The proxy-scale methodology and results are complete.
 
 ---
 
 ## Related
 
-- [**Concept Assembly Zone**](https://github.com/jamesrahenry/Concept_Assembly_Zone) — the theoretical framework paper this project tests
-- [**Pop Goes the Easel**](https://github.com/jamesrahenry/pop_goes_the_easel) — a companion mechanistic interpretability study using CAZ reference data
+- [**Concept Assembly Zone**](https://github.com/jamesrahenry/Concept_Assembly_Zone) — the theoretical framework this project tests
+- [**Pop Goes the Easel**](https://github.com/jamesrahenry/pop_goes_the_easel) — a companion mechanistic interpretability study using CAZ reference curves
 
 ---
 
-## Theoretical Background
+## Background
 
-The pipeline uses established mechanistic interpretability methods:
+**Platonic Representation Hypothesis** — Huh et al. (2024): models trained on different data and architectures converge on similar representations of reality.
 
-- **Difference-of-Means (DoM)** — Arditi et al. (2024), *Refusal in Language Models Is Mediated by a Single Direction*
-- **Linear Artificial Tomography (LAT)** — Zou et al. (2023), *Representation Engineering*
-- **Orthogonal Procrustes alignment** — for cross-architecture vector comparison
-- **TransformerLens** — Nanda et al., for residual stream hook access
+**Difference-of-Means (DoM)** — Arditi et al. (2024), *Refusal in Language Models Is Mediated by a Single Direction*
 
-The CAZ framework extends these by asking not just *whether* a concept has a geometric direction, but *when* across model depth it becomes stably extractable and surgically ablatable.
+**Linear Artificial Tomography (LAT)** — Zou et al. (2023), *Representation Engineering*
+
+**Orthogonal Procrustes** — cross-architecture alignment: given concept vectors from two models, find the rotation that best maps one to the other. Convergence under rotation is evidence for PRH.
+
+**TransformerLens** — Nanda et al., residual stream hook access for layer-wise metric extraction.
 
 ---
 
