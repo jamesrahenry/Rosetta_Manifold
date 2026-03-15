@@ -48,10 +48,30 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 SUPPORTED_MODELS = {
+    # GPT-2 family
     "gpt2": "gpt2",
     "gpt2-medium": "gpt2-medium",
     "gpt2-large": "gpt2-large",
     "gpt2-xl": "gpt2-xl",
+    # GPT-Neo family
+    "gpt-neo-125m": "EleutherAI/gpt-neo-125M",
+    "gpt-neo-1.3b": "EleutherAI/gpt-neo-1.3B",
+    "gpt-neo-2.7b": "EleutherAI/gpt-neo-2.7B",
+    # Pythia family
+    "pythia-14m": "EleutherAI/pythia-14m",
+    "pythia-70m": "EleutherAI/pythia-70m",
+    "pythia-160m": "EleutherAI/pythia-160m",
+    "pythia-410m": "EleutherAI/pythia-410m",
+    "pythia-1b": "EleutherAI/pythia-1b",
+    "pythia-1.4b": "EleutherAI/pythia-1.4b",
+    # OPT family
+    "opt-125m": "facebook/opt-125m",
+    "opt-350m": "facebook/opt-350m",
+    "opt-1.3b": "facebook/opt-1.3b",
+    # Qwen2 family
+    "qwen2-0.5b": "Qwen/Qwen2-0.5B",
+    "qwen2-1.5b": "Qwen/Qwen2-1.5B",
+    # Frontier (require significant compute)
     "llama3": "meta-llama/Meta-Llama-3-8B",
     "mistral": "mistralai/Mistral-7B-v0.1",
     "qwen": "Qwen/Qwen2.5-7B",
