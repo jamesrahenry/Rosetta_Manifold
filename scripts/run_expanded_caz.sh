@@ -105,7 +105,9 @@ declare -A MODEL_IDS=(
     ["qwen2-1.5b"]="Qwen/Qwen2-1.5B"
 )
 
-MODEL_ORDER=(gpt2 gpt2-xl gpt-neo-125m gpt-neo-1.3b pythia-160m pythia-410m opt-125m opt-1.3b qwen2-1.5b)
+# qwen2-1.5b excluded: TransformerLens BOS token incompatibility with Qwen2
+# tokenizer (add_bos_token=True but bos_token=None). Needs upstream fix.
+MODEL_ORDER=(gpt2 gpt2-xl gpt-neo-125m gpt-neo-1.3b pythia-160m pythia-410m opt-125m opt-1.3b)
 
 log ""
 log "=== Phase 2: CAZ extraction ==="
