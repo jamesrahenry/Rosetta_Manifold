@@ -1,0 +1,131 @@
+{
+  "description": "Contrastive pair datasets for CAZ (Concept Assembly Zone) empirical validation",
+  "format": "JSONL — one record per line, two records per pair (label 1 = positive class, label 0 = negative class)",
+  "fields": {
+    "pair_id": "Domain + index within domain (e.g. science_01)",
+    "label": "1 = positive class (affirming/epistemic/causal/etc), 0 = negative class",
+    "domain": "Topic domain: science, everyday, history, technology (25 pairs per domain)",
+    "model_name": "Generation model (HuggingFace or FuelIX model ID)",
+    "text": "Generated statement text",
+    "topic": "Topic prompt used for generation",
+    "concept": "Concept being tested (may be absent in older datasets)"
+  },
+  "datasets": {
+    "credibility_pairs.jsonl": {
+      "concept": "credibility",
+      "concept_type": "epistemic",
+      "description": "Credible vs non-credible statements — tests epistemic signal assembly",
+      "label_1": "Credible, well-evidenced, epistemically sound statement",
+      "label_0": "Non-credible, poorly-evidenced, or epistemically suspect statement",
+      "pairs": 100,
+      "domains": ["technical", "political", "personal", "scientific"],
+      "generation_model": "claude-sonnet-4-5",
+      "generation_date": "2026-03-10",
+      "generation_api": "FuelIX (https://api.fuelix.ai/v1)",
+      "notes": "Original dataset, generated before concept field was added. Domain names differ from later datasets."
+    },
+    "negation_pairs.jsonl": {
+      "concept": "negation",
+      "concept_type": "syntactic",
+      "description": "Affirmative vs negated statements — tests syntactic negation signal assembly",
+      "label_1": "Affirmative statement (positive assertion)",
+      "label_0": "Negated statement (explicit negation markers: not, never, no, cannot)",
+      "pairs": 100,
+      "domains": ["science", "everyday", "history", "technology"],
+      "generation_model": "claude-sonnet-4-5",
+      "generation_date": "2026-03-14",
+      "generation_api": "FuelIX (https://api.fuelix.ai/v1)",
+      "notes": "Expanded from original 20-pair pilot to 100 pairs on 2026-03-14. Original pilot used Ollama/local models."
+    },
+    "sentiment_pairs.jsonl": {
+      "concept": "sentiment",
+      "concept_type": "affective",
+      "description": "Positive vs negative sentiment statements — tests affective signal assembly",
+      "label_1": "Positive sentiment statement",
+      "label_0": "Negative sentiment statement",
+      "pairs": 100,
+      "domains": ["science", "everyday", "history", "technology"],
+      "generation_model": "claude-sonnet-4-5",
+      "generation_date": "2026-03-14",
+      "generation_api": "FuelIX (https://api.fuelix.ai/v1)",
+      "notes": "Regenerated to full 100 pairs on 2026-03-14 (was 99 pairs due to one dropped record)."
+    },
+    "certainty_pairs.jsonl": {
+      "concept": "certainty",
+      "concept_type": "epistemic",
+      "description": "High-certainty vs uncertain statements — tests epistemic certainty distinct from credibility",
+      "label_1": "High-certainty statement ('I know', 'it is clear that', 'definitely')",
+      "label_0": "Uncertain statement ('I'm not sure', 'it is unclear', 'the evidence is mixed')",
+      "pairs": 100,
+      "domains": ["science", "everyday", "history", "technology"],
+      "generation_model": "claude-sonnet-4-5",
+      "generation_date": "2026-03-15",
+      "generation_api": "FuelIX (https://api.fuelix.ai/v1)",
+      "notes": "history_25 (Magna Carta topic) regenerated separately after rate-limit drop during initial generation run."
+    },
+    "plurality_pairs.jsonl": {
+      "concept": "plurality",
+      "concept_type": "syntactic",
+      "description": "Plural vs singular grammatical constructions — tests syntactic number signal",
+      "label_1": "Plural constructions throughout ('researchers have', 'the studies show')",
+      "label_0": "Singular constructions throughout ('the researcher has', 'the study shows')",
+      "pairs": 100,
+      "domains": ["science", "everyday", "history", "technology"],
+      "generation_model": "claude-sonnet-4-5",
+      "generation_date": "2026-03-15",
+      "generation_api": "FuelIX (https://api.fuelix.ai/v1)",
+      "notes": "Same factual content in both members of each pair; only grammatical number varies."
+    },
+    "causation_pairs.jsonl": {
+      "concept": "causation",
+      "concept_type": "relational",
+      "description": "Causal vs non-causal relationship statements — tests relational/causal signal",
+      "label_1": "Explicit causal assertion ('caused', 'led to', 'resulted in', 'drove')",
+      "label_0": "Non-causal framing ('coincided with', 'was observed alongside', 'does not cause')",
+      "pairs": 100,
+      "domains": ["science", "everyday", "history", "technology"],
+      "generation_model": "claude-sonnet-4-5",
+      "generation_date": "2026-03-15",
+      "generation_api": "FuelIX (https://api.fuelix.ai/v1)",
+      "notes": "Relational concept — expected to sit between syntactic and epistemic in CAZ depth ordering."
+    },
+    "moral_valence_pairs.jsonl": {
+      "concept": "moral_valence",
+      "concept_type": "affective",
+      "description": "Moral approval vs moral condemnation — tests moral evaluation distinct from sentiment",
+      "label_1": "Morally positive evaluation ('morally right', 'ethical', 'we have a duty to')",
+      "label_0": "Morally negative evaluation ('morally wrong', 'unethical', 'irresponsible')",
+      "pairs": 100,
+      "domains": ["science", "everyday", "history", "technology"],
+      "generation_model": "claude-sonnet-4-5",
+      "generation_date": "2026-03-15",
+      "generation_api": "FuelIX (https://api.fuelix.ai/v1)",
+      "notes": "Distinct from sentiment: focuses on moral/ethical evaluation rather than emotional tone."
+    },
+    "temporal_order_pairs.jsonl": {
+      "concept": "temporal_order",
+      "concept_type": "relational",
+      "description": "Forward vs reversed temporal sequence — tests temporal ordering signal",
+      "label_1": "Forward temporal order ('first...then', 'preceded', 'prior to', 'initially...subsequently')",
+      "label_0": "Reversed or unclear temporal order (opposite sequence or 'the order is disputed')",
+      "pairs": 100,
+      "domains": ["science", "everyday", "history", "technology"],
+      "generation_model": "claude-sonnet-4-5",
+      "generation_date": "2026-03-15",
+      "generation_api": "FuelIX (https://api.fuelix.ai/v1)",
+      "notes": "Hit FuelIX rate limits during generation; backoff recovery worked, all 100 pairs complete."
+    }
+  },
+  "concept_taxonomy": {
+    "syntactic":  ["negation", "plurality"],
+    "relational": ["causation", "temporal_order"],
+    "affective":  ["sentiment", "moral_valence"],
+    "epistemic":  ["certainty", "credibility"]
+  },
+  "caz_predictions": {
+    "expected_depth_ordering": "syntactic < relational < affective < epistemic",
+    "validated_at": "GPT-2-XL (48 layers) for negation, sentiment, credibility",
+    "pending_validation": "certainty, plurality, causation, moral_valence, temporal_order"
+  },
+  "last_updated": "2026-03-15"
+}
