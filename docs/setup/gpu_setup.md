@@ -136,3 +136,33 @@ Host github-personal
 ```
 
 Then use `git remote set-url origin git@github-personal:username/repo.git` instead of the standard `git@github.com:...` form.
+
+---
+
+## TransformerLens + Pythia on transformers 5.x
+
+TransformerLens 2.16.x reads `hf_config.rotary_pct` directly when loading
+GPTNeoX (Pythia) models. transformers 5.x moved this attribute into
+`rope_parameters.partial_rotary_factor`, causing:
+
+```
+AttributeError: 'GPTNeoXConfig' object has no attribute 'rotary_pct'
+```
+
+**Fix:** patch the installed TransformerLens package in-place:
+
+```bash
+TLLM_FILE=$(python3 -c "import transformer_lens, os; print(os.path.join(os.path.dirname(transformer_lens.__file__), 'loading_from_pretrained.py'))")
+
+sed -i 's/        rotary_pct = hf_config\.rotary_pct/        rotary_pct = getattr(hf_config, "rotary_pct", None) or (hf_config.rope_parameters.get("partial_rotary_factor", 1.0) if hasattr(hf_config, "rope_parameters") else 1.0)/' $TLLM_FILE
+```
+
+This falls back to `rope_parameters.partial_rotary_factor` (0.25 for Pythia)
+when `rotary_pct` is absent. The fix survives until `transformer-lens` is
+reinstalled or upgraded.
+
+Alternatively, upgrade to TransformerLens 2.17.0 which may fix this natively:
+```bash
+pip install transformer-lens==2.17.0
+```
+(Untested as of 2026-03-15 — verify pythia loads before running long jobs.)
