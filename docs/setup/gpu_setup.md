@@ -166,3 +166,24 @@ Alternatively, upgrade to TransformerLens 2.17.0 which may fix this natively:
 pip install transformer-lens==2.17.0
 ```
 (Untested as of 2026-03-15 — verify pythia loads before running long jobs.)
+
+## TransformerLens + Qwen2 on transformers 5.x
+
+Two issues with Qwen2 models:
+
+**1. rope_theta moved to rope_parameters** — same pattern as Pythia. Patch:
+
+```bash
+TLLM_FILE=$(python3 -c "import transformer_lens, os; print(os.path.join(os.path.dirname(transformer_lens.__file__), 'loading_from_pretrained.py'))")
+
+sed -i 's/hf_config\.rope_theta/getattr(hf_config, "rope_theta", None) or (hf_config.rope_parameters.get("rope_theta", 10000.0) if hasattr(hf_config, "rope_parameters") else 10000.0)/g' $TLLM_FILE
+```
+
+**2. BOS token incompatibility** — Qwen2 tokenizers set `add_bos_token=True`
+but don't define `bos_token`, causing TransformerLens to raise:
+`ValueError: add_bos_token = True but bos_token = None`
+
+This requires a fix in TransformerLens itself or a custom loading path.
+As of 2026-03-15, Qwen2 models are excluded from the CAZ extraction pipeline.
+Workaround: use the raw `transformers` library (not TransformerLens) for
+Qwen2 activation extraction — same approach as `pop_goes_the_contrastive.py`.
