@@ -32,6 +32,10 @@ import numpy as np
 import torch
 from transformer_lens import HookedTransformer
 
+# Shared GPU utilities (Rosetta_Program/shared/)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from shared.gpu_utils import get_device, get_dtype, log_vram
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -129,8 +133,11 @@ def extract_activations(
 
         all_activations.append(extracted)
 
-    # Concatenate all batches
-    return torch.cat(all_activations, dim=0).numpy()
+    # Concatenate all batches and cast to float32 before numpy conversion.
+    # fp16 activations cause variance overflow in Fisher normalization at deep
+    # layers of large models — float32 is required for accurate metric computation
+    # regardless of model dtype. This is cheap: the forward pass stays in fp16.
+    return torch.cat(all_activations, dim=0).float().numpy()
 
 
 # ---------------------------------------------------------------------------
@@ -348,7 +355,9 @@ def load_dataset(path: Path) -> tuple[list[str], list[str]]:
             else:
                 non_credible.append(record["text"])
 
-    log.info("Loaded %d credible, %d non-credible texts", len(credible), len(non_credible))
+    log.info(
+        "Loaded %d credible, %d non-credible texts", len(credible), len(non_credible)
+    )
     return credible, non_credible
 
 
@@ -361,7 +370,7 @@ def extract_caz_data(
     model_id: str,
     dataset_path: Path,
     token_pos: int = -1,
-    device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    device: str = "auto",
 ) -> dict:
     """
     Extract CAZ metrics for a model.
@@ -370,22 +379,32 @@ def extract_caz_data(
         model_id: HuggingFace model ID
         dataset_path: Path to credibility_pairs.jsonl
         token_pos: Token position (-1 for last)
-        device: Device to use
+        device: Device to use ("cuda", "cpu", or "auto")
 
     Returns:
         Dictionary with CAZ analysis results
     """
+    device = get_device(device)
     log.info("=== CAZ Extraction: %s ===", model_id)
     log.info("Device: %s", device)
+
+    # Load model in fp16 on GPU (fast forward passes).
+    # Activations are cast to float32 before metric computation — see
+    # extract_activations() — which avoids Fisher normalization overflow
+    # in deep layers without requiring a full fp32 model load.
+    base_dtype = get_dtype(device)
 
     # Load model
     log.info("Loading model...")
     model = HookedTransformer.from_pretrained(
         model_id,
         device=device,
-        dtype=torch.float16 if device == "cuda" else torch.float32,
+        dtype=base_dtype,
     )
-    log.info("Model loaded: %d layers, hidden_dim=%d", model.cfg.n_layers, model.cfg.d_model)
+    log_vram("after model load")
+    log.info(
+        "Model loaded: %d layers, hidden_dim=%d", model.cfg.n_layers, model.cfg.d_model
+    )
 
     # Load dataset
     credible_texts, non_credible_texts = load_dataset(dataset_path)
@@ -464,10 +483,7 @@ def main() -> None:
         model_id = args.model
 
     # Resolve device
-    if args.device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    else:
-        device = args.device
+    device = get_device(args.device)
 
     # Check dataset exists
     dataset_path = Path(args.dataset)
