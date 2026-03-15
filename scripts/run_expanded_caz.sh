@@ -118,11 +118,11 @@ done_runs=0
 skipped_runs=0
 failed_runs=0
 
-# Count planned runs
+# Count planned runs — use $((x+1)) form to avoid set -e killing on zero result
 for concept in "${ALL_CONCEPTS[@]}"; do
     [[ ! -f "data/${concept}_pairs.jsonl" ]] && continue
     for model_key in "${MODEL_ORDER[@]}"; do
-        ((total_runs++))
+        total_runs=$((total_runs + 1))
     done
 done
 log "  Total planned extractions: $total_runs"
@@ -171,14 +171,14 @@ print(f'L{b[\"caz_peak\"]} S={b[\"peak_separation\"]:.3f}')
 
                 log "DONE   ${concept}/${model_key}  (${elapsed}s)  peak=${peak}"
                 echo "${concept},${model_key},${peak},${elapsed}" >> "$LOG_DIR/results_summary.csv"
-                ((done_runs++))
+                done_runs=$((done_runs + 1))
             else
                 log "FAILED ${concept}/${model_key}  (analyze step)"
-                ((failed_runs++))
+                failed_runs=$((failed_runs + 1))
             fi
         else
             log "FAILED ${concept}/${model_key}  (extract step)"
-            ((failed_runs++))
+            failed_runs=$((failed_runs + 1))
         fi
 
         # Clear GPU cache between runs
