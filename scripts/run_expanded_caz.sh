@@ -161,12 +161,17 @@ for concept in "${ALL_CONCEPTS[@]}"; do
                 t_end=$(date +%s)
                 elapsed=$((t_end - t_start))
 
-                # Extract peak layer for summary
+                # Extract peak layer for summary — glob for actual filename since
+                # TransformerLens may use a different case than our model_key
                 peak=$(python3 -c "
-import json
-d = json.load(open('$analysis_out'))
-b = d['boundaries']
-print(f'L{b[\"caz_peak\"]} S={b[\"peak_separation\"]:.3f}')
+import json, glob
+files = glob.glob('$results_dir/caz_analysis*.json')
+if not files:
+    print('?')
+else:
+    d = json.load(open(files[0]))
+    b = d['boundaries']
+    print(f'L{b[\"caz_peak\"]} S={b[\"peak_separation\"]:.3f}')
 " 2>/dev/null || echo "?")
 
                 log "DONE   ${concept}/${model_key}  (${elapsed}s)  peak=${peak}"
@@ -204,5 +209,22 @@ log "=== Run complete ==="
 log "  Completed: $done_runs / $total_runs"
 log "  Failed:    $failed_runs"
 log "  Log dir:   $LOG_DIR"
+log ""
+
+# Show failures for easy retry
+if [[ $failed_runs -gt 0 ]]; then
+    log "Failed runs (check logs in $LOG_DIR):"
+    grep "^FAILED" "$SUMMARY_LOG" | while read -r line; do
+        log "  $line"
+    done
+    log ""
+    log "To retry failed runs individually:"
+    grep "^FAILED" "$SUMMARY_LOG" | sed 's/FAILED  //' | awk '{print $1}' | while read -r run; do
+        concept=$(echo $run | cut -d/ -f1)
+        model=$(echo $run | cut -d/ -f2)
+        model_id="${MODEL_IDS[$model]:-$model}"
+        log "  python src/extract_vectors_caz.py --model $model_id --dataset data/${concept}_pairs.jsonl"
+    done
+fi
 log ""
 log "Next: python src/analyze_expanded_caz.py --timestamp $TIMESTAMP"
