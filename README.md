@@ -28,30 +28,33 @@ The two questions are related. If CAZ position is concept-specific but architect
 
 ## Key Findings
 
-Three concepts × two model scales (GPT-2 124M, GPT-2-XL 1.5B), run on consumer hardware (NVIDIA RTX 500 Ada, 4GB VRAM):
+Three concepts × two model scales (GPT-2 124M, GPT-2-XL 1.5B), run on consumer hardware (NVIDIA RTX 500 Ada, 4GB VRAM). 100 contrastive pairs per concept. For full results including methodology notes, see [RESULTS.md](RESULTS.md).
 
-| Concept | Type | Peak layer (GPT-2) | Peak layer (GPT-2-XL) | Relative depth |
+**GPT-2-XL (48 layers) — the meaningful scale:**
+
+| Concept | Type | Peak layer | Peak S | Relative depth |
 |---|---|---|---|---|
-| Credibility | Epistemic | L10 / 12 | L44 / 48 | ~92% |
-| Negation | Syntactic | L8 / 12 | L39 / 48 | ~81% |
-| Sentiment | Affective | L9 / 12 | L44 / 48 | ~88–92% |
+| Negation | Syntactic | L30 / 48 | 0.257 | 63% |
+| Sentiment | Affective | L31 / 48 | 0.326 | 65% |
+| Credibility | Epistemic | L46 / 48 | 0.736 | 96% |
 
-**Concepts assemble late.** Peak separation occurs in the final 10–20% of model depth — consistent across both scales.
+**GPT-2 (12 layers) — too shallow to differentiate:**
+All three concepts peak at L10/12 (83% depth). The 12-layer model has insufficient depth for the concept-ordering effect to manifest. These results are consistent with the framework but not discriminating.
 
-**Relative CAZ position is concept-specific and scale-invariant.** Credibility peaks at ~92% depth in both GPT-2 and GPT-2-XL; negation at ~81%. This is the proxy-scale confirmation of CAZ Prediction 2 — and a preliminary signal for the PRH: if the *timing* of assembly is stable across architectures, the representations are likely converging on something real.
+**The ordering is as predicted.** Syntactic concepts assemble mid-network; epistemic concepts assemble very late and with substantially stronger signal. The gap between negation/sentiment (~64%) and credibility (~96%) is larger than anticipated.
 
-**Concept type predicts assembly profile:**
-- *Epistemic* (credibility): strong signal, late peak, entangled with general capability — hardest to ablate cleanly
-- *Syntactic* (negation): moderate signal, earlier peak, orthogonal to other concepts — cleanest ablation
-- *Affective* (sentiment): weaker signal, scale-dependent timing — improves markedly at larger scale
-
-**Ablation works at proxy scale.** Orthogonal projection at the CAZ peak removes 100% of concept signal. KL divergence passes the <0.2 threshold for syntactic concepts; epistemic concepts require frontier scale (expected — more entangled with general capability).
+**What the data does and doesn't support:**
+- ✓ Concept-type ordering emerges at gpt2-xl scale
+- ✓ Credibility is the most strongly separated concept (S=0.736 vs 0.257–0.326)
+- ✓ Epistemic concepts have a distinct pre-CAZ region (credibility CAZ starts at L21)
+- ✗ Architecture-stable relative depth (Prediction 2) is **not confirmed** — relative depths differ substantially between GPT-2 and GPT-2-XL. Proper test requires same-scale architectures.
+- ✗ Mid-Stream Ablation Hypothesis confirmed at GPT-2 scale but **not at GPT-2-XL scale** — the concept direction at 1.5B parameters is too distributed for single-layer projection ablation.
 
 ---
 
 ## Visualizations
 
-**Comprehensive comparison — all 3 concepts × 2 models:**
+**Comprehensive comparison — all 3 concepts × 2 models (100 pairs each, fp32 metrics):**
 
 ![Comprehensive concept comparison](visualizations/COMPREHENSIVE_CONCEPT_COMPARISON.png)
 
@@ -59,24 +62,26 @@ Three concepts × two model scales (GPT-2 124M, GPT-2-XL 1.5B), run on consumer 
 
 | GPT-2 (124M) | GPT-2-XL (1.5B) |
 |---|---|
-| ![Credibility GPT-2](visualizations/credibility_gpt2_2026-03-10.png) | ![Credibility GPT-2-XL](visualizations/credibility_gpt2-xl_2026-03-10.png) |
+| ![Credibility GPT-2](visualizations/credibility_gpt2_2026-03-14.png) | ![Credibility GPT-2-XL](visualizations/credibility_gpt2xl_2026-03-14.png) |
 
 **Negation:**
 
 | GPT-2 (124M) | GPT-2-XL (1.5B) |
 |---|---|
-| ![Negation GPT-2](visualizations/negation_gpt2_2026-03-10.png) | ![Negation GPT-2-XL](visualizations/negation_gpt2-xl_2026-03-10.png) |
+| ![Negation GPT-2](visualizations/negation_gpt2_2026-03-14.png) | ![Negation GPT-2-XL](visualizations/negation_gpt2xl_2026-03-14.png) |
 
 **Sentiment:**
 
 | GPT-2 (124M) | GPT-2-XL (1.5B) |
 |---|---|
-| ![Sentiment GPT-2](visualizations/sentiment_gpt2_2026-03-10.png) | ![Sentiment GPT-2-XL](visualizations/sentiment_gpt2-xl_2026-03-10.png) |
+| ![Sentiment GPT-2](visualizations/sentiment_gpt2_2026-03-14.png) | ![Sentiment GPT-2-XL](visualizations/sentiment_gpt2xl_2026-03-14.png) |
 
 Each figure shows three layer-wise metrics across all transformer blocks:
 - **S(l)** — Separation: Fisher-normalized centroid distance between concept classes
 - **C(l)** — Coherence: explained variance of the primary PCA component
 - **v(l)** — Velocity: rate of change of separation (dS/dLayer)
+
+*March 10 visualizations (20 negation pairs, fp16 metric bug in credibility gpt2-xl) are retained in `visualizations/` for comparison but superseded by the March 14 runs above.*
 
 ---
 
@@ -188,16 +193,17 @@ Two known pre-existing failures in `test_extract_vectors.py` (`test_dom_lat_agre
 | Component | Status |
 |---|---|
 | Phase 1: Dataset generation | Complete — 3 concepts, 100 pairs each |
-| Phase 2: Vector extraction | Complete — DoM + LAT, all proxy models |
+| Phase 2: Vector extraction (fp32 metrics) | Complete — GPT-2 and GPT-2-XL |
 | Phase 2: CAZ metrics | Complete — S/C/v across all layers |
 | Phase 2: Cross-arch alignment | Implemented — proxy scale only |
-| Phase 3: Ablation | Complete — proxy scale validated |
-| Proxy scale (GPT-2, GPT-Neo, OPT) | **Validated — 10 models** |
+| Phase 3: Ablation | Confirmed at GPT-2; not confirmed at GPT-2-XL |
+| CAZ Prediction 1 (Mid-Stream Ablation) | **Partial** — GPT-2 only |
+| CAZ Prediction 2 (Architecture-Stable depth) | **Not confirmed** — needs same-scale architectures |
 | Frontier scale (Llama 3 70B, Qwen 2.5 72B) | Pending compute |
 | Cross-architecture PRH validation | Pending frontier scale |
 | Publication | Preliminary paper in `paper/` |
 
-Frontier-scale compute is the primary remaining blocker for both the PRH and CAZ work. The proxy-scale methodology and results are complete.
+See [RESULTS.md](RESULTS.md) for complete results, methodology notes, and an honest account of what the data does and doesn't support.
 
 ---
 
