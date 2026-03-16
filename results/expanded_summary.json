@@ -1,0 +1,71 @@
+{
+  "n_results": 64,
+  "concepts": [
+    "causation",
+    "certainty",
+    "credibility",
+    "moral_valence",
+    "negation",
+    "plurality",
+    "sentiment",
+    "temporal_order"
+  ],
+  "models": [
+    "gpt-neo-1.3b",
+    "gpt-neo-125m",
+    "gpt2-xl",
+    "gpt2",
+    "opt-1.3b",
+    "opt-125m",
+    "pythia-160m",
+    "pythia-410m"
+  ],
+  "gpt2xl_peaks": {
+    "temporal_order": {
+      "layer": 36,
+      "pct": 75.0,
+      "S": 0.4487
+    },
+    "causation": {
+      "layer": 37,
+      "pct": 77.1,
+      "S": 0.4883
+    },
+    "negation": {
+      "layer": 39,
+      "pct": 81.2,
+      "S": 0.314
+    },
+    "certainty": {
+      "layer": 44,
+      "pct": 91.7,
+      "S": 0.4998
+    },
+    "moral_valence": {
+      "layer": 44,
+      "pct": 91.7,
+      "S": 0.2942
+    },
+    "sentiment": {
+      "layer": 44,
+      "pct": 91.7,
+      "S": 0.3956
+    },
+    "credibility": {
+      "layer": 46,
+      "pct": 95.8,
+      "S": 0.7359
+    },
+    "plurality": {
+      "layer": 47,
+      "pct": 97.9,
+      "S": 0.3223
+    }
+  },
+  "type_mean_depths_gpt2xl": {
+    "relational": 76.05,
+    "syntactic": 89.55000000000001,
+    "affective": 91.7,
+    "epistemic": 93.75
+  }
+}
