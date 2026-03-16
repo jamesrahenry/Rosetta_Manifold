@@ -17,18 +17,23 @@ architectures (4 families × 2 scales), 100 pairs per concept, fp32 metrics.
 
 ---
 
-## Comprehensive Comparison (March 14) — Original 3 Concepts × 2 Models
+## Comprehensive Comparison (March 16) — All 8 Concepts × 2 Model Scales
 
 **File**: `COMPREHENSIVE_CONCEPT_COMPARISON.png`
 
-**What it shows**: Single-page visualization with all 3 concepts × 2 models = 6 datasets
-(credibility, negation, sentiment × GPT-2, GPT-2-XL)
+**What it shows**: Three-panel S/C/v overlay — all 8 concepts × GPT-2 (12L) and GPT-2-XL (48L).
+x-axis normalised to relative depth (0–100%) so both scales are directly comparable.
+Solid lines = GPT-2 (12L); dashed = GPT-2-XL (48L).
 
 **Panels**:
-1. **Separation Trajectories** - Concept strength across layers
-2. **Coherence Trajectories** - Concept stability/consistency
-3. **Velocity Trajectories** - Rate of concept formation
-4. **Summary Statistics Table** - All key metrics
+1. **S(l)** — Separation (Fisher-normalised centroid distance)
+2. **C(l)** — Coherence (explained variance of primary PCA component)
+3. **V(l)** — Velocity (rate of change of separation)
+
+**File**: `COMPREHENSIVE_CONCEPT_SUMMARY_TABLE.png`
+
+**What it shows**: Peak layer, peak S, and concept type for all 8 concepts × 2 scales,
+ordered by type (relational → syntactic → affective → epistemic).
 
 ---
 
@@ -110,7 +115,8 @@ March 10 runs retained for comparison only (fp16 bug / 20-pair negation).
 | `expanded_depth_ordering.png` | Mar 15 | All 8 | All 8 arch | Primary result figure |
 | `expanded_cross_architecture.png` | Mar 15 | All 8 | All 8 arch | Architecture consistency |
 | `expanded_separation_heatmap.png` | Mar 15 | All 8 | All 8 arch | Separation strength heatmap |
-| `COMPREHENSIVE_CONCEPT_COMPARISON.png` | Mar 14 | 3 | GPT-2, GPT-2-XL | Multi-panel summary |
+| `COMPREHENSIVE_CONCEPT_COMPARISON.png` | Mar 16 | All 8 | GPT-2, GPT-2-XL | S/C/v overlay, normalised depth |
+| `COMPREHENSIVE_CONCEPT_SUMMARY_TABLE.png` | Mar 16 | All 8 | GPT-2, GPT-2-XL | Peak layer / S / type table |
 | `credibility_gpt2_2026-03-14.png` | Mar 14 | credibility | gpt2 | Current |
 | `credibility_gpt2xl_2026-03-14.png` | Mar 14 | credibility | gpt2-xl | Current |
 | `negation_gpt2_2026-03-14.png` | Mar 14 | negation | gpt2 | Current |
