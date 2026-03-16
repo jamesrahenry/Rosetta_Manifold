@@ -29,6 +29,10 @@ import numpy as np
 import torch
 from transformer_lens import HookedTransformer
 
+# Shared GPU utilities (Rosetta_Program/shared/)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from shared.gpu_utils import get_device, get_dtype, log_vram
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -148,24 +152,21 @@ def extract_tiny(
     """Extract from tiny model."""
     log.info("=== Extracting from %s ===", model_id)
 
-    if device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-
+    device = get_device(device)
     log.info("Device: %s", device)
 
     # Load model
     log.info("Loading model...")
-
-    # For CPU, use fp32; for GPU with 4GB, use fp16
-    dtype = torch.float32 if device == "cpu" else torch.float16
-
     model = HookedTransformer.from_pretrained(
         model_id,
         device=device,
-        dtype=dtype,
+        dtype=get_dtype(device),
     )
+    log_vram("after model load")
 
-    log.info("Model loaded: %d layers, hidden_dim=%d", model.cfg.n_layers, model.cfg.d_model)
+    log.info(
+        "Model loaded: %d layers, hidden_dim=%d", model.cfg.n_layers, model.cfg.d_model
+    )
 
     # Load dataset
     credible_texts, non_credible_texts = load_dataset(dataset_path)
@@ -273,7 +274,9 @@ def compute_alignment_tiny(results_list: list[dict]) -> dict:
     log.info("Average cross-model similarity:")
     log.info("  DoM: %.4f", avg_dom)
     log.info("  LAT: %.4f", avg_lat)
-    log.info("PRH test (threshold=%.2f): %s", prh_threshold, "PASS" if prh_result else "FAIL")
+    log.info(
+        "PRH test (threshold=%.2f): %s", prh_threshold, "PASS" if prh_result else "FAIL"
+    )
 
     alignment["prh_threshold"] = prh_threshold
     alignment["prh_pass"] = prh_result
@@ -282,7 +285,9 @@ def compute_alignment_tiny(results_list: list[dict]) -> dict:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Tiny PoC: Extract vectors from small models")
+    parser = argparse.ArgumentParser(
+        description="Tiny PoC: Extract vectors from small models"
+    )
     parser.add_argument(
         "--model",
         type=str,

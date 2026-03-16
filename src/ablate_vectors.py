@@ -43,6 +43,10 @@ import torch
 import torch.nn.functional as F
 from transformer_lens import HookedTransformer
 
+# Shared GPU utilities (Rosetta_Program/shared/)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from shared.gpu_utils import get_device, get_dtype, log_vram
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -124,12 +128,12 @@ class DirectionalAblator:
         self.layer = layer
         self.component = component
 
-        # Normalize direction
+        # Normalize direction; cast to model dtype so fp16 GPU runs don't error
         self.direction = torch.tensor(direction, dtype=torch.float32)
         self.direction = self.direction / torch.norm(self.direction)
-
-        # Move to model device
-        self.direction = self.direction.to(model.cfg.device)
+        self.direction = self.direction.to(
+            device=model.cfg.device, dtype=model.cfg.dtype
+        )
 
         # Hook name
         self.hook_name = f"blocks.{layer}.hook_{component}"
@@ -270,7 +274,9 @@ def measure_activation_along_direction(
     """
     direction_tensor = torch.tensor(direction, dtype=torch.float32)
     direction_tensor = direction_tensor / torch.norm(direction_tensor)
-    direction_tensor = direction_tensor.to(model.cfg.device)
+    direction_tensor = direction_tensor.to(
+        device=model.cfg.device, dtype=model.cfg.dtype
+    )
 
     hook_name = f"blocks.{layer}.hook_{component}"
     activations = []
@@ -349,7 +355,7 @@ def ablate_and_validate(
     direction: np.ndarray,
     layer: int,
     component: str,
-    device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    device: str = "auto",
 ) -> dict:
     """
     Ablate model and validate results.
@@ -359,11 +365,12 @@ def ablate_and_validate(
         direction: Direction to ablate
         layer: Layer index
         component: Component name
-        device: Device to use
+        device: Device to use ("cuda", "cpu", or "auto")
 
     Returns:
         Validation results dict
     """
+    device = get_device(device)
     log.info("=== Ablating %s at layer %d (%s) ===", model_id, layer, component)
 
     # Load model
@@ -371,8 +378,9 @@ def ablate_and_validate(
     model = HookedTransformer.from_pretrained(
         model_id,
         device=device,
-        dtype=torch.float16 if device == "cuda" else torch.float32,
+        dtype=get_dtype(device),
     )
+    log_vram("after model load")
 
     # Measure baseline activations
     log.info("Measuring baseline activations...")
@@ -696,10 +704,7 @@ def main() -> None:
         model_name = args.model.split("/")[-1]
 
     # Resolve device
-    if args.device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    else:
-        device = args.device
+    device = get_device(args.device)
 
     # Load vectors
     vectors_path = Path(args.vectors)

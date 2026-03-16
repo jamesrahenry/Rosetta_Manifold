@@ -36,10 +36,15 @@ def check_cuda() -> bool:
     """Check CUDA availability."""
     try:
         import torch
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+        from shared.gpu_utils import log_vram
+
         if torch.cuda.is_available():
             device_name = torch.cuda.get_device_name(0)
-            vram = torch.cuda.get_device_properties(0).total_memory / 1e9
-            print(f"  ✓ CUDA available: {device_name} ({vram:.1f}GB VRAM)")
+            vram = torch.cuda.get_device_properties(0).total_memory / 1024**3
+            print(f"  ✓ CUDA available: {device_name} ({vram:.1f} GiB VRAM)")
+            log_vram("current usage")
             return True
         else:
             print("  ⚠ CUDA not available (will use CPU - slower)")
@@ -60,7 +65,9 @@ def main():
     if version.major == 3 and version.minor >= 10:
         print(f"  ✓ Python {version.major}.{version.minor}.{version.micro}")
     else:
-        print(f"  ✗ Python {version.major}.{version.minor}.{version.micro} (need 3.10+)")
+        print(
+            f"  ✗ Python {version.major}.{version.minor}.{version.micro} (need 3.10+)"
+        )
         all_good = False
 
     print("\nCore dependencies:")
@@ -94,6 +101,7 @@ def main():
     print("\nModel download permissions:")
     try:
         from huggingface_hub import HfFolder
+
         token = HfFolder.get_token()
         if token:
             print("  ✓ HuggingFace token found")
@@ -103,7 +111,7 @@ def main():
     except ImportError:
         print("  ⚠ huggingface_hub not installed")
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     if all_good:
         print("✓ All critical dependencies are installed!")
         print("\nReady to run:")

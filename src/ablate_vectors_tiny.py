@@ -30,6 +30,10 @@ log = logging.getLogger(__name__)
 sys.path.insert(0, str(Path(__file__).parent))
 from ablate_vectors import DirectionalAblator, generate_with_ablation
 
+# Shared GPU utilities (Rosetta_Program/shared/)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from shared.gpu_utils import get_device, get_dtype, log_vram
+
 # Tiny models (TransformerLens supported)
 TINY_MODELS = {
     "pythia-410m": "EleutherAI/pythia-410m",
@@ -71,7 +75,9 @@ def measure_activation_tiny(
     """Measure activation along direction (tiny version)."""
     direction_tensor = torch.tensor(direction, dtype=torch.float32)
     direction_tensor = direction_tensor / torch.norm(direction_tensor)
-    direction_tensor = direction_tensor.to(model.cfg.device)
+    direction_tensor = direction_tensor.to(
+        device=model.cfg.device, dtype=model.cfg.dtype
+    )
 
     hook_name = f"blocks.{layer}.hook_{component}"
     activations = []
@@ -125,18 +131,16 @@ def ablate_tiny(
     """Run ablation on tiny model."""
     log.info("=== Ablating %s at layer %d ===", model_id, layer)
 
-    if device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = get_device(device)
 
     # Load model
     log.info("Loading model...")
-    dtype = torch.float32 if device == "cpu" else torch.float16
-
     model = HookedTransformer.from_pretrained(
         model_id,
         device=device,
-        dtype=dtype,
+        dtype=get_dtype(device),
     )
+    log_vram("after model load")
 
     # Baseline
     log.info("Measuring baseline...")
@@ -193,7 +197,9 @@ def ablate_tiny(
         "kl_divergence": float(kl),
         "kl_threshold": float(kl_threshold),
         "kl_pass": bool(kl < kl_threshold),
-        "ablation_success": bool(separation_reduction > 0.3),  # Looser: 30% instead of 50%
+        "ablation_success": bool(
+            separation_reduction > 0.3
+        ),  # Looser: 30% instead of 50%
         "tiny_poc": True,
     }
 

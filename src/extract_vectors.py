@@ -36,6 +36,10 @@ import numpy as np
 import torch
 from transformer_lens import HookedTransformer
 
+# Shared GPU utilities (Rosetta_Program/shared/)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from shared.gpu_utils import get_device, get_dtype, log_vram
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -314,7 +318,9 @@ def load_dataset(path: Path) -> tuple[list[str], list[str]]:
             else:
                 non_credible.append(record["text"])
 
-    log.info("Loaded %d credible, %d non-credible texts", len(credible), len(non_credible))
+    log.info(
+        "Loaded %d credible, %d non-credible texts", len(credible), len(non_credible)
+    )
     return credible, non_credible
 
 
@@ -329,7 +335,7 @@ def extract_credibility_vectors(
     layer_start: int = 14,
     layer_end: int = 23,
     token_pos: int = -1,
-    device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    device: str = "auto",
 ) -> dict:
     """
     Extract credibility vectors from a model using both DoM and LAT.
@@ -340,11 +346,12 @@ def extract_credibility_vectors(
         layer_start: Start layer for sweep
         layer_end: End layer for sweep (exclusive)
         token_pos: Token position (-1 for last)
-        device: Device to use
+        device: Device to use ("cuda", "cpu", or "auto")
 
     Returns:
         Dictionary with extraction results
     """
+    device = get_device(device)
     log.info("=== Extracting credibility vectors from %s ===", model_id)
     log.info("Device: %s", device)
 
@@ -353,9 +360,12 @@ def extract_credibility_vectors(
     model = HookedTransformer.from_pretrained(
         model_id,
         device=device,
-        dtype=torch.float16 if device == "cuda" else torch.float32,
+        dtype=get_dtype(device),
     )
-    log.info("Model loaded: %d layers, hidden_dim=%d", model.cfg.n_layers, model.cfg.d_model)
+    log_vram("after model load")
+    log.info(
+        "Model loaded: %d layers, hidden_dim=%d", model.cfg.n_layers, model.cfg.d_model
+    )
 
     # Load dataset
     credible_texts, non_credible_texts = load_dataset(dataset_path)
@@ -372,9 +382,7 @@ def extract_credibility_vectors(
 
     # Extract activations at best layer
     log.info("Extracting activations at layer %d...", best_layer)
-    credible_acts = extract_activations(
-        model, credible_texts, best_layer, token_pos
-    )
+    credible_acts = extract_activations(model, credible_texts, best_layer, token_pos)
     non_credible_acts = extract_activations(
         model, non_credible_texts, best_layer, token_pos
     )
@@ -467,7 +475,9 @@ def compute_alignment_matrix(results_list: list[dict]) -> dict:
 
     prh_threshold = 0.5
     prh_result = avg_dom >= prh_threshold and avg_lat >= prh_threshold
-    log.info("PRH test (threshold=%.2f): %s", prh_threshold, "PASS" if prh_result else "FAIL")
+    log.info(
+        "PRH test (threshold=%.2f): %s", prh_threshold, "PASS" if prh_result else "FAIL"
+    )
     if not prh_result:
         log.info(
             "  DoM: %s (%.4f)",
@@ -629,10 +639,7 @@ def main() -> None:
         sys.exit(1)
 
     # Resolve device
-    if args.device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    else:
-        device = args.device
+    device = get_device(args.device)
 
     # Check dataset exists
     dataset_path = Path(args.dataset)
