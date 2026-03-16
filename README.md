@@ -71,9 +71,11 @@ Eight concepts × eight model architectures (4 families × 2 scales), run on con
 
 ![Separation strength heatmap](visualizations/expanded_separation_heatmap.png)
 
-**Comprehensive comparison — original 3 concepts × 2 models (100 pairs each, fp32 metrics):**
+**Comprehensive comparison — all 8 concepts × 2 model scales (x-axis normalised to relative depth):**
 
 ![Comprehensive concept comparison](visualizations/COMPREHENSIVE_CONCEPT_COMPARISON.png)
+
+![Summary table](visualizations/COMPREHENSIVE_CONCEPT_SUMMARY_TABLE.png)
 
 **Per-concept layer profiles (GPT-2 vs GPT-2-XL):**
 
