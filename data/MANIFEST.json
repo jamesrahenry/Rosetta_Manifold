@@ -44,11 +44,17 @@
       "label_1": "Positive sentiment statement",
       "label_0": "Negative sentiment statement",
       "pairs": 100,
-      "domains": ["science", "everyday", "history", "technology"],
+      "domains": [
+        "personal_experience", "relationships", "work_career", "health_wellness",
+        "learning_growth", "creative_pursuits", "social_community",
+        "nature_environment", "future_outlook", "daily_life"
+      ],
+      "domain_structure": "10 domains × 10 pairs (vs 4 × 25 for all other concepts)",
       "generation_model": "claude-sonnet-4-5",
+      "generation_script": "src/generate_sentiment_dataset.py",
       "generation_date": "2026-03-14",
       "generation_api": "FuelIX (https://api.fuelix.ai/v1)",
-      "notes": "Regenerated to full 100 pairs on 2026-03-14 (was 99 pairs due to one dropped record)."
+      "notes": "Intentionally broader domain structure (10 affective domains) to capture full range of emotional contexts. Empirically does not produce anomalous metric profiles vs. 4-domain datasets — consistent S/C/V curves across all 8 models in the expanded run. Domain granularity difference documented for methods transparency; not a confound for within-concept measurements. Generator: src/generate_sentiment_dataset.py (separate from generate_new_concepts.py used for later datasets)."
     },
     "certainty_pairs.jsonl": {
       "concept": "certainty",
@@ -66,6 +72,7 @@
     "plurality_pairs.jsonl": {
       "concept": "plurality",
       "concept_type": "syntactic",
+      "status": "DISCONTINUED — retained for archival purposes and as a negative result",
       "description": "Plural vs singular grammatical constructions — tests syntactic number signal",
       "label_1": "Plural constructions throughout ('researchers have', 'the studies show')",
       "label_0": "Singular constructions throughout ('the researcher has', 'the study shows')",
@@ -74,7 +81,14 @@
       "generation_model": "claude-sonnet-4-5",
       "generation_date": "2026-03-15",
       "generation_api": "FuelIX (https://api.fuelix.ai/v1)",
-      "notes": "Same factual content in both members of each pair; only grammatical number varies."
+      "notes": "Same factual content in both members of each pair; only grammatical number varies.",
+      "known_issues": [
+        "Surface morphosyntax confound: contrast is grammatical number agreement only, not semantic plurality. Resolvable from first token without deep representational assembly.",
+        "Credibility confound: plural constructions systematically read as more authoritative (multiple researchers, multiple studies) conflating plurality signal with evidential weight.",
+        "Anomalous metric profile: mean peak depth 41.4%, std 42.0% — largest variance of any concept in expanded run. OPT/Pythia peak at layers 0-17% (near-surface), GPT-2/GPT-Neo peak at 92-98%. Bimodal pattern inconsistent with CAZ framework predictions.",
+        "Not recommended for inclusion in cross-concept CAZ depth ordering analysis until reconceptualized."
+      ],
+      "interpretation": "Plurality as operationalized here is a negative result in the productive sense: it demonstrates that the CAZ framework does not have purchase on surface morphosyntactic features resolved at the token level. Grammatical number agreement is handled architecturally differently across model families (OPT/Pythia resolve it in layers 0-17%, GPT-2/GPT-Neo in layers 92-98%) in a pattern that reflects implementation differences in attention, not concept assembly dynamics. This is an informative boundary condition for the framework's scope, not a failure of the methodology. Retained in the repository as a documented negative result. Excluded from active concept taxonomy and frontier runs."
     },
     "causation_pairs.jsonl": {
       "concept": "causation",
@@ -117,15 +131,22 @@
     }
   },
   "concept_taxonomy": {
-    "syntactic":  ["negation", "plurality"],
-    "relational": ["causation", "temporal_order"],
-    "affective":  ["sentiment", "moral_valence"],
-    "epistemic":  ["certainty", "credibility"]
+    "active": {
+      "syntactic":  ["negation"],
+      "relational": ["causation", "temporal_order"],
+      "affective":  ["sentiment", "moral_valence"],
+      "epistemic":  ["certainty", "credibility"]
+    },
+    "discontinued": {
+      "plurality": "Negative result: grammatical number agreement is a surface morphosyntactic feature resolved architecturally inconsistently across model families. CAZ framework does not have purchase on features at this level of processing. Retained as archival negative result — see plurality_pairs.jsonl notes."
+    }
   },
   "caz_predictions": {
     "expected_depth_ordering": "syntactic < relational < affective < epistemic",
+    "active_concepts": ["negation", "causation", "temporal_order", "sentiment", "moral_valence", "certainty", "credibility"],
     "validated_at": "GPT-2-XL (48 layers) for negation, sentiment, credibility",
-    "pending_validation": "certainty, plurality, causation, moral_valence, temporal_order"
+    "pending_frontier_validation": ["certainty", "causation", "moral_valence", "temporal_order"],
+    "note": "Plurality discontinued 2026-03-16 as a documented negative result. Seven-concept taxonomy is the active set for frontier runs and publication."
   },
   "extraction_runs": {
     "run_1_2026-03-10": {

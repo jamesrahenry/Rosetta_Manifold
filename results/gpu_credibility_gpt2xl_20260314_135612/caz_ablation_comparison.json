@@ -1,0 +1,51 @@
+{
+  "model_id": "gpt2-xl",
+  "caz_boundaries": {
+    "caz_start": 45,
+    "caz_peak": 45,
+    "caz_end": 45,
+    "peak_separation": NaN,
+    "threshold": NaN
+  },
+  "baseline_separation": NaN,
+  "ablation_results": [
+    {
+      "layer": 45,
+      "separation_reduction": 0.0,
+      "kl_divergence": NaN,
+      "position": "caz_start"
+    },
+    {
+      "layer": 45,
+      "separation_reduction": 0.0,
+      "kl_divergence": NaN,
+      "position": "caz_mid"
+    },
+    {
+      "layer": 45,
+      "separation_reduction": 0.0,
+      "kl_divergence": NaN,
+      "position": "caz_peak"
+    },
+    {
+      "layer": 45,
+      "separation_reduction": 0.0,
+      "kl_divergence": NaN,
+      "position": "caz_end"
+    },
+    {
+      "layer": 47,
+      "separation_reduction": 0.0,
+      "kl_divergence": NaN,
+      "position": "post_caz"
+    }
+  ],
+  "hypothesis_test": {
+    "caz_mid_reduction": 0.0,
+    "post_caz_reduction": 0.0,
+    "caz_mid_kl": NaN,
+    "post_caz_kl": NaN,
+    "kl_improvement": NaN,
+    "hypothesis_supported": false
+  }
+}
