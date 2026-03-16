@@ -63,29 +63,27 @@ Eight concepts × eight model architectures (4 families × 2 scales), run on con
 
 ## Visualizations
 
-**Comprehensive comparison — all 3 concepts × 2 models (100 pairs each, fp32 metrics):**
+**Expanded run (March 15) — all 8 concepts × 8 architectures:**
+
+![Depth ordering by concept](visualizations/expanded_depth_ordering.png)
+
+![Cross-architecture consistency](visualizations/expanded_cross_architecture.png)
+
+![Separation strength heatmap](visualizations/expanded_separation_heatmap.png)
+
+**Comprehensive comparison — original 3 concepts × 2 models (100 pairs each, fp32 metrics):**
 
 ![Comprehensive concept comparison](visualizations/COMPREHENSIVE_CONCEPT_COMPARISON.png)
 
-**Credibility:**
+**Per-concept layer profiles (GPT-2 vs GPT-2-XL, March 14 corrected runs):**
 
-| GPT-2 (124M) | GPT-2-XL (1.5B) |
-|---|---|
-| ![Credibility GPT-2](visualizations/credibility_gpt2_2026-03-14.png) | ![Credibility GPT-2-XL](visualizations/credibility_gpt2xl_2026-03-14.png) |
+| Concept | GPT-2 (124M) | GPT-2-XL (1.5B) |
+|---|---|---|
+| Credibility | ![Credibility GPT-2](visualizations/credibility_gpt2_2026-03-14.png) | ![Credibility GPT-2-XL](visualizations/credibility_gpt2xl_2026-03-14.png) |
+| Negation | ![Negation GPT-2](visualizations/negation_gpt2_2026-03-14.png) | ![Negation GPT-2-XL](visualizations/negation_gpt2xl_2026-03-14.png) |
+| Sentiment | ![Sentiment GPT-2](visualizations/sentiment_gpt2_2026-03-14.png) | ![Sentiment GPT-2-XL](visualizations/sentiment_gpt2xl_2026-03-14.png) |
 
-**Negation:**
-
-| GPT-2 (124M) | GPT-2-XL (1.5B) |
-|---|---|
-| ![Negation GPT-2](visualizations/negation_gpt2_2026-03-14.png) | ![Negation GPT-2-XL](visualizations/negation_gpt2xl_2026-03-14.png) |
-
-**Sentiment:**
-
-| GPT-2 (124M) | GPT-2-XL (1.5B) |
-|---|---|
-| ![Sentiment GPT-2](visualizations/sentiment_gpt2_2026-03-14.png) | ![Sentiment GPT-2-XL](visualizations/sentiment_gpt2xl_2026-03-14.png) |
-
-Each figure shows three layer-wise metrics across all transformer blocks:
+Each per-concept figure shows three layer-wise metrics across all transformer blocks:
 - **S(l)** — Separation: Fisher-normalized centroid distance between concept classes
 - **C(l)** — Coherence: explained variance of the primary PCA component
 - **v(l)** — Velocity: rate of change of separation (dS/dLayer)
@@ -100,7 +98,8 @@ Three phases, each building on the last:
 
 ```
 Phase 1  Dataset generation
-         Contrastive pairs (credibility, negation, sentiment)
+         Contrastive pairs (8 concepts: credibility, negation, sentiment,
+         certainty, plurality, causation, moral_valence, temporal_order)
          N=100 pairs per concept, 4 domains each
 
 Phase 2  Vector extraction + CAZ analysis
@@ -122,21 +121,29 @@ Phase 3  Ablation validation
 ```
 Rosetta_Manifold/
 ├── src/                        Core pipeline
-│   ├── generate_dataset.py       Phase 1: contrastive pair generation
+│   ├── generate_dataset.py       Phase 1: credibility contrastive pair generation
 │   ├── generate_negation_dataset.py
 │   ├── generate_sentiment_dataset.py
+│   ├── generate_new_concepts.py  Phase 1: batch generation for expanded concept set
 │   ├── extract_vectors.py        Phase 2: DoM/LAT extraction + Procrustes alignment
-│   ├── extract_vectors_caz.py    Phase 2: layer-wise CAZ metrics
+│   ├── extract_vectors_caz.py    Phase 2: layer-wise CAZ metrics (HF native)
+│   ├── extract_caz_frontier.py   Phase 2: multi-concept frontier extraction (H100-ready)
 │   ├── analyze_caz.py            Phase 2: CAZ boundary detection + visualization
+│   ├── analyze_expanded_caz.py   Phase 2: expanded run analysis across all concepts
 │   ├── ablate_vectors.py         Phase 3: orthogonal projection ablation
 │   ├── ablate_caz.py             Phase 3: position-specific ablation test
 │   ├── align_vectors.py          Cross-architecture Procrustes alignment
 │   ├── compare_all_concepts.py   Multi-concept comparison figures
 │   └── viz_dom_lat.py            DoM/LAT agreement visualization
-├── data/                       Datasets
+├── data/                       Datasets (8 concepts, 100 pairs each)
 │   ├── credibility_pairs.jsonl
 │   ├── negation_pairs.jsonl
-│   └── sentiment_pairs.jsonl
+│   ├── sentiment_pairs.jsonl
+│   ├── certainty_pairs.jsonl
+│   ├── plurality_pairs.jsonl
+│   ├── causation_pairs.jsonl
+│   ├── moral_valence_pairs.jsonl
+│   └── temporal_order_pairs.jsonl
 ├── tests/                      Test suite
 │   ├── test_math_only.py         Dependency-free math tests (CI)
 │   ├── test_extract_vectors.py
@@ -150,6 +157,8 @@ Rosetta_Manifold/
 │   ├── Spec 1 -- Credibility Contrastive Dataset.md
 │   ├── Spec 2 -- Vector Extraction & Alignment Pipeline.md
 │   ├── Spec 3 -- Heretic Optimization and Ablation.md
+│   ├── Spec 4 -- Procrustes Alignment and Cross-Architecture Validation.md
+│   ├── PORTING_STATUS.md         TransformerLens → rosetta_tools migration status
 │   ├── setup/                  Hardware and environment setup guides
 │   └── archive/                Session logs and interim reports
 ├── paper/                      Preliminary write-ups and resource proposals
