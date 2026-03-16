@@ -75,13 +75,20 @@ Eight concepts × eight model architectures (4 families × 2 scales), run on con
 
 ![Comprehensive concept comparison](visualizations/COMPREHENSIVE_CONCEPT_COMPARISON.png)
 
-**Per-concept layer profiles (GPT-2 vs GPT-2-XL, March 14 corrected runs):**
+**Per-concept layer profiles (GPT-2 vs GPT-2-XL):**
 
 | Concept | GPT-2 (124M) | GPT-2-XL (1.5B) |
 |---|---|---|
 | Credibility | ![Credibility GPT-2](visualizations/credibility_gpt2_2026-03-14.png) | ![Credibility GPT-2-XL](visualizations/credibility_gpt2xl_2026-03-14.png) |
 | Negation | ![Negation GPT-2](visualizations/negation_gpt2_2026-03-14.png) | ![Negation GPT-2-XL](visualizations/negation_gpt2xl_2026-03-14.png) |
 | Sentiment | ![Sentiment GPT-2](visualizations/sentiment_gpt2_2026-03-14.png) | ![Sentiment GPT-2-XL](visualizations/sentiment_gpt2xl_2026-03-14.png) |
+| Certainty | ![Certainty GPT-2](visualizations/certainty_gpt2_2026-03-15.png) | ![Certainty GPT-2-XL](visualizations/certainty_gpt2xl_2026-03-15.png) |
+| Causation | ![Causation GPT-2](visualizations/causation_gpt2_2026-03-15.png) | ![Causation GPT-2-XL](visualizations/causation_gpt2xl_2026-03-15.png) |
+| Moral valence | ![Moral valence GPT-2](visualizations/moral_valence_gpt2_2026-03-15.png) | ![Moral valence GPT-2-XL](visualizations/moral_valence_gpt2xl_2026-03-15.png) |
+| Temporal order | ![Temporal order GPT-2](visualizations/temporal_order_gpt2_2026-03-15.png) | ![Temporal order GPT-2-XL](visualizations/temporal_order_gpt2xl_2026-03-15.png) |
+| Plurality *(discontinued)* | ![Plurality GPT-2](visualizations/plurality_gpt2_2026-03-15.png) | ![Plurality GPT-2-XL](visualizations/plurality_gpt2xl_2026-03-15.png) |
+
+*Credibility/negation/sentiment: March 14 corrected runs (fp32 metrics, 100 pairs). Remaining concepts: March 15 expanded run.*
 
 Each per-concept figure shows three layer-wise metrics across all transformer blocks:
 - **S(l)** — Separation: Fisher-normalized centroid distance between concept classes

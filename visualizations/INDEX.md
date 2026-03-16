@@ -34,10 +34,10 @@ architectures (4 families × 2 scales), 100 pairs per concept, fp32 metrics.
 
 ## Per-Concept Layer Profiles
 
-Individual S/C/v layer-profile figures for credibility, negation, and sentiment.
-March 14 runs are the canonical versions (fp32 metrics, 100 pairs).
-March 10 runs are retained for comparison only (fp16 bug in credibility gpt2-xl,
-20-pair negation dataset).
+Individual S/C/v layer-profile figures for all 8 concepts.
+Credibility/negation/sentiment: March 14 corrected runs (canonical, fp32 metrics, 100 pairs).
+Remaining five concepts: March 15 expanded run.
+March 10 runs retained for comparison only (fp16 bug / 20-pair negation).
 
 ### Credibility
 
@@ -66,6 +66,41 @@ March 10 runs are retained for comparison only (fp16 bug in credibility gpt2-xl,
 | gpt2 | 2026-03-10 | Superseded | `sentiment_gpt2_2026-03-10.png` |
 | gpt2-xl | 2026-03-10 | Superseded | `sentiment_gpt2-xl_2026-03-10.png` |
 
+### Certainty
+
+| Model | Date | Status | File |
+|:------|:-----|:-------|:-----|
+| gpt2 | 2026-03-15 | **Current** | `certainty_gpt2_2026-03-15.png` |
+| gpt2-xl | 2026-03-15 | **Current** | `certainty_gpt2xl_2026-03-15.png` |
+
+### Causation
+
+| Model | Date | Status | File |
+|:------|:-----|:-------|:-----|
+| gpt2 | 2026-03-15 | **Current** | `causation_gpt2_2026-03-15.png` |
+| gpt2-xl | 2026-03-15 | **Current** | `causation_gpt2xl_2026-03-15.png` |
+
+### Moral Valence
+
+| Model | Date | Status | File |
+|:------|:-----|:-------|:-----|
+| gpt2 | 2026-03-15 | **Current** | `moral_valence_gpt2_2026-03-15.png` |
+| gpt2-xl | 2026-03-15 | **Current** | `moral_valence_gpt2xl_2026-03-15.png` |
+
+### Temporal Order
+
+| Model | Date | Status | File |
+|:------|:-----|:-------|:-----|
+| gpt2 | 2026-03-15 | **Current** | `temporal_order_gpt2_2026-03-15.png` |
+| gpt2-xl | 2026-03-15 | **Current** | `temporal_order_gpt2xl_2026-03-15.png` |
+
+### Plurality *(discontinued — negative result)*
+
+| Model | Date | Status | File |
+|:------|:-----|:-------|:-----|
+| gpt2 | 2026-03-15 | Retained (archival) | `plurality_gpt2_2026-03-15.png` |
+| gpt2-xl | 2026-03-15 | Retained (archival) | `plurality_gpt2xl_2026-03-15.png` |
+
 ---
 
 ## All Files
@@ -88,3 +123,13 @@ March 10 runs are retained for comparison only (fp16 bug in credibility gpt2-xl,
 | `negation_gpt2-xl_2026-03-10.png` | Mar 10 | negation | gpt2-xl | Superseded — 20 pairs |
 | `sentiment_gpt2_2026-03-10.png` | Mar 10 | sentiment | gpt2 | Superseded |
 | `sentiment_gpt2-xl_2026-03-10.png` | Mar 10 | sentiment | gpt2-xl | Superseded |
+| `certainty_gpt2_2026-03-15.png` | Mar 15 | certainty | gpt2 | Current |
+| `certainty_gpt2xl_2026-03-15.png` | Mar 15 | certainty | gpt2-xl | Current |
+| `causation_gpt2_2026-03-15.png` | Mar 15 | causation | gpt2 | Current |
+| `causation_gpt2xl_2026-03-15.png` | Mar 15 | causation | gpt2-xl | Current |
+| `moral_valence_gpt2_2026-03-15.png` | Mar 15 | moral_valence | gpt2 | Current |
+| `moral_valence_gpt2xl_2026-03-15.png` | Mar 15 | moral_valence | gpt2-xl | Current |
+| `temporal_order_gpt2_2026-03-15.png` | Mar 15 | temporal_order | gpt2 | Current |
+| `temporal_order_gpt2xl_2026-03-15.png` | Mar 15 | temporal_order | gpt2-xl | Current |
+| `plurality_gpt2_2026-03-15.png` | Mar 15 | plurality | gpt2 | Retained — negative result |
+| `plurality_gpt2xl_2026-03-15.png` | Mar 15 | plurality | gpt2-xl | Retained — negative result |
