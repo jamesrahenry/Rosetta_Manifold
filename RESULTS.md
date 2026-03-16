@@ -1,23 +1,25 @@
 # Rosetta Manifold — Results
 
-**Last updated:** March 2026
-**Dataset version:** 100 pairs per concept (credibility, negation, sentiment)
-**Models:** GPT-2 (124M, 12 layers), GPT-2-XL (1.5B, 48 layers)
+**Last updated:** March 15, 2026
+**Dataset version:** 100 pairs per concept (8 concepts)
+**Models:** GPT-2, GPT-2-XL, GPT-Neo-125M, GPT-Neo-1.3B, Pythia-160M, Pythia-410M, OPT-125M, OPT-1.3B
 **Hardware:** NVIDIA RTX 500 Ada, 4GB VRAM, fp16 forward passes with fp32 metric computation
 
 ---
 
-## A Note on Experimental History
+## Experimental History
 
-The results presented here are the third generation of runs on this pipeline. The history is documented because it illustrates real issues in mechanistic interpretability experimentation at small scale, and because honest science requires it.
+The results presented here span four generations of runs. The history is documented because it illustrates real issues in small-scale mechanistic interpretability work, and because honest science requires it.
 
-**Run 1 (March 10, CPU fp32):** Original runs on 20 negation pairs and 99 sentiment pairs (credibility was already at 100). Results were qualitatively reasonable but the small negation dataset gave unreliable Fisher separation estimates.
+**Run 1 (March 10, CPU fp32):** Original runs on 20 negation pairs and 99 sentiment pairs. Results were qualitatively reasonable but the small negation dataset gave unreliable Fisher separation estimates.
 
-**Run 2 (March 14, GPU fp16 — flawed):** All concepts expanded to 100 pairs. First GPU run. A bug in the extraction pipeline caused fp16 activations to overflow the Fisher normalization in gpt2-xl's deep layers (L32+), producing S=0.0 for layers 32–44 and NaN for 45–47. This silently corrupted the credibility gpt2-xl results. The negation and sentiment gpt2-xl results were also affected by the same bug but to a lesser degree since their peaks fall before layer 32.
+**Run 2 (March 14, GPU fp16 — flawed):** All concepts expanded to 100 pairs. A bug caused fp16 activations to overflow Fisher normalization in deep layers (L32+) of gpt2-xl, producing S=0.0 for layers 32–44 and NaN for 45–47. This silently corrupted the results for all three concepts at gpt2-xl scale.
 
-**Run 3 (March 14, GPU fp16 + fp32 metrics — current):** Fixed by casting activations to float32 before metric computation, while keeping forward passes in fp16 on GPU. Forward passes stay fast; Fisher normalization is accurate. The credibility gpt2-xl results were rerun from scratch. These are the authoritative results.
+**Run 3 (March 14, GPU fp16 + fp32 metrics — corrected):** Fixed by casting activations to float32 before metric computation. Forward passes stay in fp16 (fast); Fisher normalization is accurate. Credibility, negation, and sentiment rerun from scratch.
 
-**The fix** is a single line in `src/extract_vectors_caz.py`:
+**Run 4 (March 15, expanded — current):** Five new concepts added (certainty, plurality, causation, moral_valence, temporal_order). All eight concepts run across eight model architectures (4 families × 2 scales). 64 successful extractions; Qwen2-1.5B excluded due to TransformerLens BOS token incompatibility.
+
+**The fp32 fix:**
 ```python
 # Before (wrong — fp16 overflows in variance computation at deep layers)
 return torch.cat(all_activations, dim=0).numpy()
@@ -28,128 +30,116 @@ return torch.cat(all_activations, dim=0).float().numpy()
 
 ---
 
-## Results — GPT-2 (12 layers)
+## Results — GPT-2-XL (48 layers) — Primary Scale
 
-All three concepts peak at layer 10 (83% depth) in GPT-2. This is a known limitation of shallow models: the CAZ has no room to differentiate — the entire network is operating near the transition zone. GPT-2's 12 layers are insufficient to observe the concept-ordering effect the CAZ framework predicts.
+At 48 layers concepts differentiate clearly. All results use 100 contrastive pairs and fp32 metric computation.
 
-| Concept | Peak layer | Peak S | Peak C | CAZ start | CAZ end | CAZ width |
-|---|---|---|---|---|---|---|
-| Credibility | L10 / 12 | 0.579 | 0.193 | L0 | L11 | 12 (full model) |
-| Negation | L10 / 12 | 0.272 | 0.196 | L0 | L11 | 12 (full model) |
-| Sentiment | L10 / 12 | 0.347 | 0.203 | L0 | L11 | 12 (full model) |
+| Concept | Type | Peak layer | Peak S | Relative depth |
+|---|---|---|---|---|
+| temporal_order | relational | L36 / 48 | 0.449 | 75% |
+| causation | relational | L37 / 48 | 0.488 | 77% |
+| negation | syntactic | L39 / 48 | 0.314 | 81% |
+| certainty | epistemic | L44 / 48 | 0.500 | 92% |
+| moral_valence | affective | L44 / 48 | 0.294 | 92% |
+| sentiment | affective | L44 / 48 | 0.396 | 92% |
+| credibility | epistemic | L46 / 48 | 0.736 | 96% |
+| plurality | syntactic | L47 / 48 | 0.322 | 98% |
 
-**Interpretation:** All three concepts span the full model depth. The CAZ framework's predictions about concept ordering and width require more depth to manifest. These results are consistent with the framework but not confirmatory.
+**Visualizations — expanded run:**
+
+![Depth ordering by concept](visualizations/expanded_depth_ordering.png)
+
+![Cross-architecture consistency](visualizations/expanded_cross_architecture.png)
+
+![Separation strength heatmap](visualizations/expanded_separation_heatmap.png)
+
+### Type-level ordering (mean depth)
+
+| Type | Mean depth | Concepts |
+|---|---|---|
+| Relational | 76% | temporal_order (75%), causation (77%) |
+| Syntactic | 90% | negation (81%), plurality (98%) |
+| Affective | 92% | moral_valence (92%), sentiment (92%) |
+| Epistemic | 94% | certainty (92%), credibility (96%) |
+
+### What this supports and what it doesn't
+
+**Supported:**
+- A broad late-assembly pattern holds: relational and syntactic concepts generally precede affective and epistemic concepts
+- Credibility is the most strongly separated concept (S=0.736), consistent with epistemic signals being heavily encoded in training data
+- The affective and epistemic clusters are well-separated from relational concepts
+- Certainty and temporal_order are architecturally consistent across scales
+
+**Not supported / anomalous:**
+- The predicted ordering (syntactic < relational) is **reversed** — relational concepts (causation L37, temporal_order L36) assemble *earlier* than negation (L39), and far earlier than plurality (L47)
+- **Plurality is anomalously deep** at L47 (98%) — the deepest concept measured, deeper than credibility. A surface grammatical feature (singular/plural) should not need the model's full depth. This is either a genuine finding about grammatical agreement in gpt2-xl, or a measurement artifact from the contrastive pair design (identical content, only number varies — may be harder to separate geometrically)
+- The type ordering is noisy within types: syntactic spans 81–98%, a 17-point range, while affective and epistemic cluster tightly
 
 ---
 
-## Results — GPT-2-XL (48 layers)
+## Results — Small Models (12–24 layers)
 
-At 48 layers the concept-type ordering emerges clearly. Syntactic concepts assemble earlier; epistemic concepts assemble later and more strongly.
+All small models show the same floor effect as GPT-2: concepts peak at 50–90% depth with no clear separation between types. The CAZ ordering effect requires sufficient depth to manifest.
 
-| Concept | Peak layer | Peak S | Peak C | Relative depth |
+| Model | Layers | Credibility | Negation | Sentiment | Notes |
+|---|---|---|---|---|---|
+| GPT-2 | 12 | L11 (92%) | L10 (83%) | L10 (83%) | All cluster near top |
+| GPT-Neo-125M | 12 | L11 (92%) | ~83% | ~83% | Same floor |
+| Pythia-160M | 12 | L11 (92%) | L5 (42%) | L5 (42%) | Earlier peaks — different training |
+| OPT-125M | 12 | L8 (67%) | L8 (67%) | L8 (67%) | Consistent but shallow |
+| GPT-Neo-1.3B | 24 | ~62% | ~57% | ~71% | Partial separation |
+| Pythia-410M | 24 | L4 (17%) | L11 (46%) | L13 (54%) | Unusual early peaks |
+| OPT-1.3B | 24 | L18 (75%) | L13 (54%) | L15 (63%) | Progressive separation |
+
+**Key observation:** Pythia models show dramatically earlier peaks than other architectures at equivalent scale. Pythia-160M's credibility peaks at L11 (last layer of 12), while Pythia-410M peaks at L4 of 24. This is architecturally interesting — Pythia uses parallel attention and MLP blocks rather than sequential, which may explain the different assembly dynamics.
+
+---
+
+## Architecture Consistency (CAZ Prediction 2)
+
+| Concept | 12L mean | 24L mean | 48L mean | Consistent? |
 |---|---|---|---|---|
-| Negation | L39 / 48 | 0.314 | — | 81% |
-| Sentiment | L44 / 48 | 0.396 | — | 92% |
-| Credibility | L46 / 48 | 0.736 | 0.240 | 96% |
+| temporal_order | 56% | 64% | 75% | **Yes** (spread 19%) |
+| certainty | 75% | 75% | 92% | **Yes** (spread 17%) |
+| causation | 56% | 58% | 77% | Partial (spread 21%) |
+| sentiment | 71% | 71% | 92% | Partial (spread 21%) |
+| moral_valence | 67% | 72% | 92% | Partial (spread 25%) |
+| negation | 52% | 57% | 81% | Partial (spread 29%) |
+| credibility | 86% | 63% | 96% | No (spread 33%) |
+| plurality | 33% | 33% | 98% | **No** (spread 65%) |
 
-### Ordering
+Certainty and temporal_order show the most stable relative depths across scales. Plurality is the most inconsistent — near-floor at small scales, near-ceiling at gpt2-xl. Credibility's 24-layer mean (63%) is dragged down by Pythia-410M's anomalously early L4 peak.
 
-`negation (81%) < sentiment (92%) < credibility (96%)`
-
-This is the ordering the CAZ framework predicts — and it is now consistent with the GPT-2 results:
-
-| Concept | GPT-2 depth | GPT-2-XL depth |
-|---|---|---|
-| Negation | 83% | 81% |
-| Sentiment | 83% | 92% |
-| Credibility | 83% | 96% |
-
-GPT-2 cannot differentiate the concepts (all peak at L10/12, 83%) because 12 layers is insufficient depth. At 48 layers the ordering separates cleanly. The relative depths for negation (~81–83%) and credibility (~96%) are stable across both scales — consistent with CAZ Prediction 2.
-
-### Separation magnitude
-
-Credibility (S=0.736) is substantially more separable than negation (S=0.314) or sentiment (S=0.396). The epistemic concept has a stronger geometric signal — consistent with credibility distinctions being pervasively encoded in natural language text.
-
-### Note on boundary detection
-
-The boundary detection algorithm (`analyze_caz.py`) reports CAZ width = 48 (full model) for negation and sentiment because their separation rises monotonically from layer 0 with no clear onset threshold — the algorithm cannot find a pre-CAZ floor. This is a limitation of the threshold-based detector, not of the data. The separation curves are clean and the peaks are real.
+**Prediction 2 assessment:** The *ordering* (relational/syntactic < affective/epistemic) is broadly consistent across scales, but the absolute depths are not stable. This is expected: CAZ Prediction 2 was stated for same-scale cross-architecture comparison, not across depth scales. The frontier-scale cross-architecture run (same parameter count, different architecture) remains the proper test.
 
 ---
 
 ## Ablation Results
 
-Ablation at the CAZ peak via orthogonal projection. Reported as separation reduction (%) and KL divergence from baseline generation.
+Ablation at the CAZ peak via orthogonal projection.
 
-| Concept | Model | Separation reduction | KL divergence | Notes |
-|---|---|---|---|---|
-| Credibility | GPT-2 | 100% | — | Complete signal removal |
-| Credibility | GPT-2-XL | 0% | 0.033 | Signal not removed — entangled |
-| Negation | GPT-2 | 100% | — | Complete signal removal |
-| Negation | GPT-2-XL | 0% | 0.036 | Signal not removed |
-| Sentiment | GPT-2 | 100% | — | Complete signal removal |
-| Sentiment | GPT-2-XL | 0% | — | Signal not removed |
+| Concept | Model | Separation reduction | KL divergence |
+|---|---|---|---|
+| Credibility | GPT-2 | 100% | — |
+| Credibility | GPT-2-XL | 0% | 0.033 |
+| Negation | GPT-2 | 100% | — |
+| Negation | GPT-2-XL | 0% | 0.036 |
+| Sentiment | GPT-2 | 100% | — |
+| Sentiment | GPT-2-XL | 0% | — |
 
-**Honest note:** The ablation results at gpt2-xl scale show 0% separation reduction, which means the orthogonal projection is not successfully removing the concept direction at this scale. This likely reflects the entanglement problem — at 1.5B parameters the concept direction is distributed across many components and a single-layer projection at the CAZ peak is insufficient. The GPT-2 (124M) ablation works because the simpler model concentrates the direction more sharply.
-
-This is a genuine limitation. The Mid-Stream Ablation Hypothesis (Prediction 1) is not confirmed at proxy scale for gpt2-xl. The ablation approach may need to be multi-layer, or applied across the full CAZ window rather than at a single peak layer.
+Ablation works at 12-layer scale (GPT-2); does not work at 48-layer scale (GPT-2-XL). The concept direction at 1.5B parameters is distributed across many components and a single-layer projection is insufficient. This is a genuine limitation — the Mid-Stream Ablation Hypothesis (Prediction 1) is not confirmed at gpt2-xl scale with the current approach.
 
 ---
 
-## What the Dataset Size Change and fp16 Fix Both Revealed
+## Technical Notes
 
-Two things changed between the initial negation result (L39, S=0.434) and the final result (L39, S=0.314):
+**fp16 overflow:** Fisher normalization overflows for gpt2-xl at layers 32+. Fix: cast activations to float32 before metric computation. Forward passes stay in fp16.
 
-**Dataset size (20 → 100 pairs):** Fisher-normalized separation with small samples artificially inflates S because the within-class variance denominator is underestimated. 100 pairs gives a more stable, lower, more honest S value. The peak layer (L39) turned out to be the same — the 20-pair result happened to find the right layer despite the noisy estimate.
+**TransformerLens patches required for transformers 5.x:**
+- Pythia: `rotary_pct` → `rope_parameters.partial_rotary_factor` (see `docs/setup/gpu_setup.md`)
+- Qwen2: `rope_theta` moved similarly, plus BOS token incompatibility — **Qwen2 excluded from current run**
 
-**fp16 metric overflow (Run 2 → Run 3):** The intermediate Run 2 (100 pairs, fp16) showed negation peaking at L30 with S=0.257 — an artifact of the fp16 bug collapsing layers 32+ to zero, making L30 appear as the peak. The fp32-fixed Run 3 restores the true L39 peak and shows the separation curve continuing to grow through the deep layers.
-
-The corrected L39 negation peak is consistent with the original 20-pair estimate (also L39) — the intermediate L30 result was entirely the fp16 bug. Lesson: when a bug causes an apparently cleaner result, be suspicious.
-
----
-
-## Architecture Stability (CAZ Prediction 2)
-
-With the corrected fp32 results, the relative depths are:
-
-| Concept | GPT-2 depth | GPT-2-XL depth |
-|---|---|---|
-| Negation | 83% | 81% |
-| Sentiment | 83% | 92% |
-| Credibility | 83% | 96% |
-
-Negation is consistent across both scales (~81–83%). Credibility is consistent (~96% in both). Sentiment shows a larger shift (83% → 92%) — possibly reflecting that affective signals require more depth at larger model scale to fully assemble.
-
-**Prediction 2 is partially supported.** The ordering (negation < sentiment < credibility) holds at both scales. The absolute relative depths for negation and credibility are stable. Sentiment's shift merits attention but does not contradict the core ordering prediction.
-
-Proper confirmation of Prediction 2 requires multiple architectures at the *same* parameter count — GPT-2 and GPT-2-XL differ in training data, attention patterns, and capability, not just depth. The cross-architecture PRH validation at frontier scale is the right test.
-
----
-
-## Visualizations
-
-**Comprehensive comparison (March 14, 100-pair datasets, fp32 metric fix):**
-
-![Comprehensive comparison](visualizations/COMPREHENSIVE_CONCEPT_COMPARISON.png)
-
-**Credibility:**
-
-| GPT-2 (124M) | GPT-2-XL (1.5B) |
-|---|---|
-| ![Credibility GPT-2](visualizations/credibility_gpt2_2026-03-14.png) | ![Credibility GPT-2-XL](visualizations/credibility_gpt2xl_2026-03-14.png) |
-
-**Negation:**
-
-| GPT-2 (124M) | GPT-2-XL (1.5B) |
-|---|---|
-| ![Negation GPT-2](visualizations/negation_gpt2_2026-03-14.png) | ![Negation GPT-2-XL](visualizations/negation_gpt2xl_2026-03-14.png) |
-
-**Sentiment:**
-
-| GPT-2 (124M) | GPT-2-XL (1.5B) |
-|---|---|
-| ![Sentiment GPT-2](visualizations/sentiment_gpt2_2026-03-14.png) | ![Sentiment GPT-2-XL](visualizations/sentiment_gpt2xl_2026-03-14.png) |
-
-*Note: March 10 visualizations (smaller datasets, fp16 bug in credibility gpt2-xl) are retained in `visualizations/` for comparison but should not be cited.*
+**gpt-neo summary names:** TransformerLens uses uppercase model names (e.g. `gpt-neo-125M`) that differ from our lowercase model keys. Analysis scripts use glob matching to handle this.
 
 ---
 
@@ -157,11 +147,12 @@ Proper confirmation of Prediction 2 requires multiple architectures at the *same
 
 | Finding | Status |
 |---|---|
-| Concept-type ordering (negation < sentiment < credibility) | **Confirmed** at gpt2-xl scale |
-| Credibility is the most strongly separated concept (S=0.736) | **Confirmed** |
-| Negation and credibility depths stable across GPT-2 and GPT-2-XL | **Confirmed** (~81% and ~96%) |
-| Architecture-stable ordering (Prediction 2) | **Partially supported** — ordering holds; sentiment shift requires investigation |
-| Mid-Stream Ablation Hypothesis (Prediction 1) | **Confirmed at GPT-2, not confirmed at GPT-2-XL** |
-| fp16 extraction produces valid results for deep models | **No** — fp32 metric computation required |
-| 20 negation pairs is sufficient | **No** — 100 pairs needed for stable Fisher estimates |
-| The fp16 bug can produce plausible-looking wrong results | **Yes** — L30 "peak" looked clean but was an artifact |
+| Broad late-assembly pattern (relational/syntactic before affective/epistemic) | **Confirmed** at gpt2-xl scale |
+| Specific ordering (syntactic < relational) | **Not confirmed** — reversed in data |
+| Credibility strongest separation (S=0.736) | **Confirmed** |
+| Plurality anomalously deep (L47, 98%) | **Unexplained** — needs investigation |
+| Architecture-stable ordering across model families | **Partially supported** |
+| Architecture-stable absolute depths | **Not confirmed** — needs same-scale comparison |
+| Mid-Stream Ablation Hypothesis | **Confirmed at GPT-2, not at GPT-2-XL** |
+| fp16 metrics valid for deep models | **No** — fp32 required |
+| Pythia shows earlier peaks than other architectures | **Observed** — architecture effect |
