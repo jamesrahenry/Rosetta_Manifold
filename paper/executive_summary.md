@@ -3,6 +3,11 @@
 
 **James Henry** | james.henry@telus.com | TELUS | March 2026
 
+> **ARTIFACT — DO NOT EDIT**
+> This document was circulated as a PDF to TELUS stakeholders in March 2026.
+> The markdown source is preserved here for reference only and must remain consistent with the shared PDF.
+> Research direction has since moved to frontier-scale targets (70B+); a new resource request will be drafted separately when needed.
+
 ---
 
 ## The Ask

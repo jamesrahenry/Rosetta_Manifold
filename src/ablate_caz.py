@@ -39,6 +39,10 @@ import torch
 import torch.nn.functional as F
 from transformer_lens import HookedTransformer
 
+# Shared GPU utilities (Rosetta_Program/shared/)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from shared.gpu_utils import get_device, get_dtype, log_vram
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -172,12 +176,12 @@ class DirectionalAblator:
         self.layer = layer
         self.component = component
 
-        # Normalize direction
+        # Normalize direction; cast to model dtype so fp16 GPU runs don't error
         self.direction = torch.tensor(direction, dtype=torch.float32)
         self.direction = self.direction / torch.norm(self.direction)
-
-        # Move to model device
-        self.direction = self.direction.to(model.cfg.device)
+        self.direction = self.direction.to(
+            device=model.cfg.device, dtype=model.cfg.dtype
+        )
 
         # Hook name
         self.hook_name = f"blocks.{layer}.hook_{component}"
@@ -336,7 +340,7 @@ def run_caz_ablation_comparison(
     caz_analysis: dict,
     dataset_path: Path,
     token_pos: int = -1,
-    device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    device: str = "auto",
 ) -> dict:
     """
     Run ablation comparison across CAZ positions.
@@ -346,11 +350,12 @@ def run_caz_ablation_comparison(
         caz_analysis: CAZ analysis results (from analyze_caz.py)
         dataset_path: Path to credibility dataset
         token_pos: Token position
-        device: Device to use
+        device: Device to use ("cuda", "cpu", or "auto")
 
     Returns:
         Dictionary with comparison results
     """
+    device = get_device(device)
     log.info("=== CAZ Ablation Comparison ===")
     log.info("Model: %s", model_id)
     log.info("Device: %s", device)
@@ -360,8 +365,9 @@ def run_caz_ablation_comparison(
     model = HookedTransformer.from_pretrained(
         model_id,
         device=device,
-        dtype=torch.float16 if device == "cuda" else torch.float32,
+        dtype=get_dtype(device),
     )
+    log_vram("after model load")
 
     # Load dataset
     credible = []
@@ -374,7 +380,9 @@ def run_caz_ablation_comparison(
             else:
                 non_credible.append(record["text"])
 
-    log.info("Loaded %d credible, %d non-credible texts", len(credible), len(non_credible))
+    log.info(
+        "Loaded %d credible, %d non-credible texts", len(credible), len(non_credible)
+    )
 
     # Get CAZ boundaries
     boundaries = caz_analysis["boundaries"]
@@ -412,7 +420,9 @@ def run_caz_ablation_comparison(
         baseline_logits.append(logits[0, -1, :].cpu())
 
     # Get direction from CAZ analysis (use peak layer DoM vector)
-    peak_metrics = [m for m in caz_analysis["layer_metrics"] if m["layer"] == caz_peak][0]
+    peak_metrics = [m for m in caz_analysis["layer_metrics"] if m["layer"] == caz_peak][
+        0
+    ]
     direction = np.array(peak_metrics["dom_vector"])
 
     # Test ablation at each position
@@ -461,7 +471,8 @@ def run_caz_ablation_comparison(
         "post_caz_reduction": post_caz_result["separation_reduction"],
         "caz_mid_kl": caz_mid_result["kl_divergence"],
         "post_caz_kl": post_caz_result["kl_divergence"],
-        "kl_improvement": post_caz_result["kl_divergence"] - caz_mid_result["kl_divergence"],
+        "kl_improvement": post_caz_result["kl_divergence"]
+        - caz_mid_result["kl_divergence"],
         "hypothesis_supported": (
             caz_mid_result["separation_reduction"] >= 0.5
             and caz_mid_result["kl_divergence"] < post_caz_result["kl_divergence"]
@@ -470,13 +481,17 @@ def run_caz_ablation_comparison(
 
     log.info("\n=== Mid-Stream Ablation Hypothesis ===")
     log.info("CAZ-Mid vs. Post-CAZ:")
-    log.info("  Reduction: %.2f%% vs %.2f%%",
-             hypothesis_test["caz_mid_reduction"] * 100,
-             hypothesis_test["post_caz_reduction"] * 100)
-    log.info("  KL: %.4f vs %.4f (Δ=%.4f)",
-             hypothesis_test["caz_mid_kl"],
-             hypothesis_test["post_caz_kl"],
-             hypothesis_test["kl_improvement"])
+    log.info(
+        "  Reduction: %.2f%% vs %.2f%%",
+        hypothesis_test["caz_mid_reduction"] * 100,
+        hypothesis_test["post_caz_reduction"] * 100,
+    )
+    log.info(
+        "  KL: %.4f vs %.4f (Δ=%.4f)",
+        hypothesis_test["caz_mid_kl"],
+        hypothesis_test["post_caz_kl"],
+        hypothesis_test["kl_improvement"],
+    )
     log.info("  Hypothesis supported: %s", hypothesis_test["hypothesis_supported"])
 
     return {
@@ -548,10 +563,7 @@ def main() -> None:
         model_id = args.model
 
     # Resolve device
-    if args.device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    else:
-        device = args.device
+    device = get_device(args.device)
 
     # Load CAZ analysis
     caz_path = Path(args.caz_analysis)

@@ -31,6 +31,10 @@ from transformer_lens import HookedTransformer
 
 from extract_vectors import extract_activations, load_dataset
 
+# Shared GPU utilities (Rosetta_Program/shared/)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from shared.gpu_utils import get_device, get_dtype, log_vram, release_model
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -102,7 +106,7 @@ def align_and_compare(
     target_vector: np.ndarray,
     dataset_path: Path,
     n_calibration: int = 100,
-    device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    device: str = "auto",
 ) -> dict:
     """
     Align target model to source model and compare vectors.
@@ -116,11 +120,12 @@ def align_and_compare(
         target_vector: Vector from target model
         dataset_path: Path to calibration dataset
         n_calibration: Number of samples for calibration
-        device: Device to use
+        device: Device to use ("cuda", "cpu", or "auto")
 
     Returns:
         Dictionary with alignment results
     """
+    device = get_device(device)
     log.info("=== Aligning %s -> %s ===", target_model_id, source_model_id)
 
     # Load dataset
@@ -130,18 +135,37 @@ def align_and_compare(
     log.info("Using %d samples for calibration", len(calibration_texts))
 
     # Extract activations from source model
-    log.info("Extracting source activations (%s, layer %d)...", source_model_id, source_layer)
-    source_model = HookedTransformer.from_pretrained(
-        source_model_id, device=device, dtype=torch.float16 if device == "cuda" else torch.float32
+    log.info(
+        "Extracting source activations (%s, layer %d)...", source_model_id, source_layer
     )
+    source_model = HookedTransformer.from_pretrained(
+        source_model_id, device=device, dtype=get_dtype(device)
+    )
+    log_vram("after source model load")
     source_acts = extract_activations(source_model, calibration_texts, source_layer)
-    del source_model
-    torch.cuda.empty_cache()
+    release_model(source_model)
+    log_vram("after source model release")
 
     # Extract activations from target model
-    log.info("Extracting target activations (%s, layer %d)...", target_model_id, target_layer)
+    log.info(
+        "Extracting target activations (%s, layer %d)...", target_model_id, target_layer
+    )
     target_model = HookedTransformer.from_pretrained(
-        target_model_id, device=device, dtype=torch.float16 if device == "cuda" else torch.float32
+        target_model_id, device=device, dtype=get_dtype(device)
+    )
+    log_vram("after target model load")
+    target_acts = extract_activations(target_model, calibration_texts, target_layer)
+    release_model(target_model)
+    log_vram("after target model release")
+
+    # Extract activations from target model
+    log.info(
+        "Extracting target activations (%s, layer %d)...", target_model_id, target_layer
+    )
+    target_model = HookedTransformer.from_pretrained(
+        target_model_id,
+        device=device,
+        dtype=torch.float16 if device == "cuda" else torch.float32,
     )
     target_acts = extract_activations(target_model, calibration_texts, target_layer)
     del target_model
@@ -180,17 +204,23 @@ def align_and_compare(
 
 def main():
     parser = argparse.ArgumentParser(description="Align vectors across architectures")
-    parser.add_argument("--source", type=str, required=True, help="Source model name (e.g. llama3)")
-    parser.add_argument("--target", type=str, required=True, help="Target model name (e.g. mistral)")
-    parser.add_argument("--vectors", type=str, required=True, help="Path to phase2_vectors.json")
+    parser.add_argument(
+        "--source", type=str, required=True, help="Source model name (e.g. llama3)"
+    )
+    parser.add_argument(
+        "--target", type=str, required=True, help="Target model name (e.g. mistral)"
+    )
+    parser.add_argument(
+        "--vectors", type=str, required=True, help="Path to phase2_vectors.json"
+    )
     parser.add_argument("--dataset", type=str, default="data/credibility_pairs.jsonl")
-    parser.add_argument("--n-calibration", type=int, default=100, help="Calibration samples")
+    parser.add_argument(
+        "--n-calibration", type=int, default=100, help="Calibration samples"
+    )
     parser.add_argument("--device", type=str, default="auto")
     args = parser.parse_args()
 
-    device = "cuda" if torch.cuda.is_available() and args.device == "auto" else "cpu"
-    if args.device != "auto":
-        device = args.device
+    device = get_device(args.device)
 
     # Resolve model IDs
     source_id = SUPPORTED_MODELS.get(args.source, args.source)
