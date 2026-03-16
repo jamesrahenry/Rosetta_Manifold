@@ -127,5 +127,29 @@
     "validated_at": "GPT-2-XL (48 layers) for negation, sentiment, credibility",
     "pending_validation": "certainty, plurality, causation, moral_valence, temporal_order"
   },
+  "extraction_runs": {
+    "run_1_2026-03-10": {
+      "concepts": ["credibility", "negation", "sentiment"],
+      "models": ["gpt2", "gpt2-xl"],
+      "notes": "Original run, CPU fp32, 20 negation pairs, 99 sentiment pairs"
+    },
+    "run_2_2026-03-14_flawed": {
+      "concepts": ["credibility", "negation", "sentiment"],
+      "models": ["gpt2", "gpt2-xl"],
+      "notes": "fp16 overflow bug — do not use gpt2-xl results from this run"
+    },
+    "run_3_2026-03-14_corrected": {
+      "concepts": ["credibility", "negation", "sentiment"],
+      "models": ["gpt2", "gpt2-xl"],
+      "notes": "fp32 metric fix applied — authoritative for original 3 concepts"
+    },
+    "run_4_2026-03-15_expanded": {
+      "concepts": ["credibility", "negation", "sentiment", "certainty", "plurality", "causation", "moral_valence", "temporal_order"],
+      "models": ["gpt2", "gpt2-xl", "gpt-neo-125m", "gpt-neo-1.3b", "pythia-160m", "pythia-410m", "opt-125m", "opt-1.3b"],
+      "excluded": ["qwen2-1.5b"],
+      "exclusion_reason": "TransformerLens BOS token incompatibility with Qwen2 tokenizer",
+      "notes": "Full expanded run — fp32 metrics, all 8 concepts, 8 architectures. 64 successful extractions."
+    }
+  },
   "last_updated": "2026-03-15"
 }
