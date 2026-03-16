@@ -28,27 +28,36 @@ The two questions are related. If CAZ position is concept-specific but architect
 
 ## Key Findings
 
-Three concepts × two model scales (GPT-2 124M, GPT-2-XL 1.5B), run on consumer hardware (NVIDIA RTX 500 Ada, 4GB VRAM). 100 contrastive pairs per concept. For full results including methodology notes, see [RESULTS.md](RESULTS.md).
+Eight concepts × eight model architectures (4 families × 2 scales), run on consumer hardware (NVIDIA RTX 500 Ada, 4GB VRAM). 100 contrastive pairs per concept. For full results, methodology notes, and experimental history, see [RESULTS.md](RESULTS.md).
 
-**GPT-2-XL (48 layers) — the meaningful scale:**
+**GPT-2-XL (48 layers) — the primary scale:**
+
+![Depth ordering](visualizations/expanded_depth_ordering.png)
 
 | Concept | Type | Peak layer | Peak S | Relative depth |
 |---|---|---|---|---|
-| Negation | Syntactic | L39 / 48 | 0.314 | 81% |
-| Sentiment | Affective | L44 / 48 | 0.396 | 92% |
-| Credibility | Epistemic | L46 / 48 | 0.736 | 96% |
+| temporal_order | relational | L36 / 48 | 0.449 | 75% |
+| causation | relational | L37 / 48 | 0.488 | 77% |
+| negation | syntactic | L39 / 48 | 0.314 | 81% |
+| certainty | epistemic | L44 / 48 | 0.500 | 92% |
+| moral_valence | affective | L44 / 48 | 0.294 | 92% |
+| sentiment | affective | L44 / 48 | 0.396 | 92% |
+| credibility | epistemic | L46 / 48 | 0.736 | 96% |
+| plurality | syntactic | L47 / 48 | 0.322 | 98% |
 
-**GPT-2 (12 layers) — too shallow to differentiate:**
-All three concepts peak at L10/12 (83% depth). 12 layers is insufficient depth for the concept-ordering effect to manifest.
+**Type-level mean depths:** relational (76%) < syntactic (90%) < affective (92%) < epistemic (94%)
 
-**The ordering is as predicted.** Negation assembles mid-network (~81%), sentiment later (~92%), credibility latest and most strongly (~96%). The negation and credibility relative depths are consistent with the GPT-2 results (~83% and ~96%), supporting architecture stability for those two concepts.
+**What the data supports:**
+- ✓ Broad late-assembly pattern: relational and syntactic concepts generally precede affective and epistemic
+- ✓ Credibility is the most strongly separated concept (S=0.736)
+- ✓ Affective and epistemic clusters (L44–L46) are clearly distinct from relational (L36–L37)
+- ✓ Certainty and temporal_order are architecturally consistent across model scales
 
-**What the data does and doesn't support:**
-- ✓ Concept-type ordering (negation < sentiment < credibility) confirmed at gpt2-xl scale
-- ✓ Credibility is most strongly separated (S=0.736 vs 0.314–0.396)
-- ✓ Negation and credibility relative depths stable across both model scales
-- ~ Architecture-stable relative depth (Prediction 2): **partially supported** — ordering holds, sentiment shift (83%→92%) warrants investigation
-- ✗ Mid-Stream Ablation Hypothesis: **confirmed at GPT-2, not at GPT-2-XL** — too distributed at 1.5B for single-layer projection
+**What the data doesn't support / anomalies:**
+- ✗ Predicted ordering (syntactic < relational) is **reversed** — relational concepts assemble earlier than negation
+- ✗ **Plurality is anomalously deep** (L47, 98%) — the deepest concept measured, deeper than credibility; unexplained
+- ~ Architecture-stable absolute depths: not confirmed — needs same-scale cross-architecture comparison
+- ✗ Mid-Stream Ablation Hypothesis: **confirmed at GPT-2, not at GPT-2-XL**
 
 ---
 
@@ -192,13 +201,14 @@ Two known pre-existing failures in `test_extract_vectors.py` (`test_dom_lat_agre
 
 | Component | Status |
 |---|---|
-| Phase 1: Dataset generation | Complete — 3 concepts, 100 pairs each |
-| Phase 2: Vector extraction (fp32 metrics) | Complete — GPT-2 and GPT-2-XL |
+| Phase 1: Dataset generation | Complete — 8 concepts, 100 pairs each |
+| Phase 2: Vector extraction (fp32 metrics) | Complete — 8 concepts × 8 model architectures |
 | Phase 2: CAZ metrics | Complete — S/C/v across all layers |
 | Phase 2: Cross-arch alignment | Implemented — proxy scale only |
 | Phase 3: Ablation | Confirmed at GPT-2; not confirmed at GPT-2-XL |
 | CAZ Prediction 1 (Mid-Stream Ablation) | **Partial** — GPT-2 only |
-| CAZ Prediction 2 (Architecture-Stable depth) | **Not confirmed** — needs same-scale architectures |
+| CAZ Prediction 2 (Architecture-Stable depth) | **Partially supported** — ordering holds, absolute depths need same-scale test |
+| Plurality anomaly | **Unexplained** — anomalously deep at gpt2-xl scale |
 | Frontier scale (Llama 3 70B, Qwen 2.5 72B) | Pending compute |
 | Cross-architecture PRH validation | Pending frontier scale |
 | Publication | Preliminary paper in `paper/` |
