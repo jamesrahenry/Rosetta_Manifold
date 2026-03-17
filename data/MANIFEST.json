@@ -88,7 +88,23 @@
         "Anomalous metric profile: mean peak depth 41.4%, std 42.0% — largest variance of any concept in expanded run. OPT/Pythia peak at layers 0-17% (near-surface), GPT-2/GPT-Neo peak at 92-98%. Bimodal pattern inconsistent with CAZ framework predictions.",
         "Not recommended for inclusion in cross-concept CAZ depth ordering analysis until reconceptualized."
       ],
-      "interpretation": "Plurality as operationalized here is a negative result in the productive sense: it demonstrates that the CAZ framework does not have purchase on surface morphosyntactic features resolved at the token level. Grammatical number agreement is handled architecturally differently across model families (OPT/Pythia resolve it in layers 0-17%, GPT-2/GPT-Neo in layers 92-98%) in a pattern that reflects implementation differences in attention, not concept assembly dynamics. This is an informative boundary condition for the framework's scope, not a failure of the methodology. Retained in the repository as a documented negative result. Excluded from active concept taxonomy and frontier runs."
+      "interpretation": "Plurality as operationalized here is a negative result in the productive sense: it demonstrates that the CAZ framework does not have purchase on surface morphosyntactic features resolved at the token level. Grammatical number agreement is handled architecturally differently across model families (OPT/Pythia resolve it in layers 0-17%, GPT-2/GPT-Neo in layers 92-98%) in a pattern that reflects implementation differences in attention, not concept assembly dynamics. This is an informative boundary condition for the framework's scope, not a failure of the methodology. Retained in the repository as a documented negative result. Excluded from active concept taxonomy and frontier runs.",
+      "anomaly_investigation": {
+        "date": "2026-03-16",
+        "report": "results/plurality_anomaly_investigation/investigation_report.md",
+        "script": "src/investigate_plurality_anomaly.py",
+        "hypotheses_tested": {
+          "H1_credibility_confound": {
+            "result": "REJECTED",
+            "evidence": "cos(plurality_L47_DoM, credibility_L46_DoM) = -0.136; max same-layer cosine = 0.139 at L0. Directions are orthogonal throughout the network. The credibility and plurality features occupy independent subspaces."
+          },
+          "H2_surface_morphology_artifact": {
+            "result": "PARTIALLY CONFIRMED",
+            "evidence": "First-token delta 2.05x rest-mean delta. Signal is distributed across multiple morphological markers throughout the sequence (plural nouns, verb forms, agreement targets) — not concentrated at position 0. Position 0 (Researchers vs A) is the strongest single contributor but accounts for only ~1.7% of total attribution mass."
+          }
+        },
+        "conclusion": "The L47 peak is a genuine but interpretable result. The plurality DoM direction encodes distributed grammatical number marking across the full sequence. GPT-2-XL aggregates these signals gradually through 48 layers (monotonically increasing separation) rather than resolving them in early layers as OPT/Pythia do. The CAZ framework does not have purchase on distributively-encoded surface morphosyntax — there is no discrete assembly event, just continuous aggregation. DISCONTINUED status confirmed and well-supported."
+      }
     },
     "causation_pairs.jsonl": {
       "concept": "causation",
