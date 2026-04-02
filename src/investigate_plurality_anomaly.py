@@ -328,7 +328,7 @@ def test_token_attribution(
 
     model = AutoModel.from_pretrained(
         "gpt2-xl",
-        torch_dtype=torch.float32,
+        dtype=torch.float32,
         device_map=device if device == "cuda" else None,
     )
     if device == "cpu":

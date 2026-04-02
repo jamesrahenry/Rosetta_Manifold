@@ -232,7 +232,7 @@ def extract_caz_data(
     tokenizer = AutoTokenizer.from_pretrained(model_id)
 
     log.info("Loading model...")
-    model = AutoModel.from_pretrained(model_id, torch_dtype=dtype)
+    model = AutoModel.from_pretrained(model_id, dtype=dtype)
     model.eval()
     model = model.to(device)
     log_vram("after model load")

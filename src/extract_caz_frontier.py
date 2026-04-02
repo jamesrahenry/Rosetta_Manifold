@@ -385,7 +385,7 @@ def main() -> None:
     log_device_info(device, dtype)
 
     tokenizer = AutoTokenizer.from_pretrained(args.model)
-    model = AutoModel.from_pretrained(args.model, torch_dtype=dtype)
+    model = AutoModel.from_pretrained(args.model, dtype=dtype)
     model.eval()
     model = model.to(device)
     log_vram("after model load")
