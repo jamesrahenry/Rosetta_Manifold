@@ -27,11 +27,9 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 # Import from main ablate script
-sys.path.insert(0, str(Path(__file__).parent))
 from ablate_vectors import DirectionalAblator, generate_with_ablation
 
 # Shared GPU utilities (Rosetta_Program/shared/)
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from shared.gpu_utils import get_device, get_dtype, log_vram
 
 # Tiny models (TransformerLens supported)

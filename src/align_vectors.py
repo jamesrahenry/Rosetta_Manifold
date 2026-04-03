@@ -21,7 +21,6 @@ Usage:
 import argparse
 import json
 import logging
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -32,7 +31,6 @@ from transformer_lens import HookedTransformer
 from extract_vectors import extract_activations, load_dataset
 
 # Shared GPU utilities (Rosetta_Program/shared/)
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from shared.gpu_utils import get_device, get_dtype, log_vram, release_model
 
 logging.basicConfig(

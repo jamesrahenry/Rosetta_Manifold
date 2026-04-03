@@ -37,7 +37,6 @@ def check_cuda() -> bool:
     try:
         import torch
 
-        sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
         from shared.gpu_utils import log_vram
 
         if torch.cuda.is_available():

@@ -37,7 +37,6 @@ import torch
 from transformer_lens import HookedTransformer
 
 # Shared GPU utilities (Rosetta_Program/shared/)
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from shared.gpu_utils import get_device, get_dtype, log_vram
 
 logging.basicConfig(

@@ -15,9 +15,6 @@ from pathlib import Path
 
 import numpy as np
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
 from extract_vectors import (
     compute_dom_vector,
     compute_lat_vector,

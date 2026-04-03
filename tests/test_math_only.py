@@ -9,12 +9,8 @@ Usage:
 """
 
 import sys
-from pathlib import Path
 
 import numpy as np
-
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 
 def compute_dom_vector(credible_activations, non_credible_activations):

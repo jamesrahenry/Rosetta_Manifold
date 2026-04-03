@@ -30,7 +30,6 @@ import torch
 from transformer_lens import HookedTransformer
 
 # Shared GPU utilities (Rosetta_Program/shared/)
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from shared.gpu_utils import get_device, get_dtype, log_vram
 
 logging.basicConfig(
@@ -52,7 +51,6 @@ TINY_MODELS = {
 }
 
 # Import functions from main extract_vectors
-sys.path.insert(0, str(Path(__file__).parent))
 from extract_vectors import (
     compute_dom_vector,
     compute_lat_vector,

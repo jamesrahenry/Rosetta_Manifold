@@ -13,9 +13,6 @@ from pathlib import Path
 
 import numpy as np
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
 
 class TestAblationMath:
     """Test ablation mathematical operations."""
