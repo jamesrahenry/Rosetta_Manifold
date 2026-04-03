@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 from ablate_vectors import DirectionalAblator, generate_with_ablation
 
 # Shared GPU utilities (Rosetta_Program/shared/)
-from shared.gpu_utils import get_device, get_dtype, log_vram
+from rosetta_tools.gpu_utils import get_device, get_dtype, log_vram
 
 # Tiny models (TransformerLens supported)
 TINY_MODELS = {

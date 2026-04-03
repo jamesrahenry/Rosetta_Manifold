@@ -37,7 +37,7 @@ def check_cuda() -> bool:
     try:
         import torch
 
-        from shared.gpu_utils import log_vram
+        from rosetta_tools.gpu_utils import log_vram
 
         if torch.cuda.is_available():
             device_name = torch.cuda.get_device_name(0)

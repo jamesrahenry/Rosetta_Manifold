@@ -31,7 +31,7 @@ from transformer_lens import HookedTransformer
 from extract_vectors import extract_activations, load_dataset
 
 # Shared GPU utilities (Rosetta_Program/shared/)
-from shared.gpu_utils import get_device, get_dtype, log_vram, release_model
+from rosetta_tools.gpu_utils import get_device, get_dtype, log_vram, release_model
 
 logging.basicConfig(
     level=logging.INFO,

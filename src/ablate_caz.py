@@ -40,7 +40,7 @@ import torch.nn.functional as F
 from transformer_lens import HookedTransformer
 
 # Shared GPU utilities (Rosetta_Program/shared/)
-from shared.gpu_utils import get_device, get_dtype, log_vram
+from rosetta_tools.gpu_utils import get_device, get_dtype, log_vram
 
 logging.basicConfig(
     level=logging.INFO,
