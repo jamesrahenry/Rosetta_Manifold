@@ -1,5 +1,7 @@
 # Rosetta Manifold
 
+> **Archived 2026-04-24.** This repository is no longer under active development. Methodology and empirics have been superseded by the CAZ Framework and GEM papers in the [Rosetta Program](https://github.com/jamesrahenry/Rosetta_Program).
+
 **Cross-architecture semantic vector analysis and Concept Assembly Zone empirical validation**
 
 *James Henry — March 2026*
